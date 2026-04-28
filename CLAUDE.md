@@ -52,6 +52,8 @@ gh pr create --base main
 
 One branch per issue. Reference the issue in the PR body (`Closes #N`).
 
+Do not add `Co-Authored-By` trailers to commit messages.
+
 ## Running tests
 
 ```bash
