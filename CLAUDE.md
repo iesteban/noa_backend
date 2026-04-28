@@ -37,6 +37,21 @@ alembic upgrade head        # run migrations
 uvicorn app.main:app --reload
 ```
 
+## Git workflow
+
+Always work on a branch — never commit directly to main.
+
+```bash
+git checkout -b feat/<short-description>   # or fix/, chore/
+# make changes
+git add <specific files>
+git commit -m "..."
+git push origin feat/<short-description>
+gh pr create --base main
+```
+
+One branch per issue. Reference the issue in the PR body (`Closes #N`).
+
 ## Running tests
 
 ```bash
