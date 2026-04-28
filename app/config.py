@@ -1,0 +1,20 @@
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    database_url: str
+    telegram_bot_token: str
+    telegram_webhook_secret: str
+    anthropic_api_key: str
+    openai_api_key: str
+    scw_access_key: str
+    scw_secret_key: str
+    scw_region: str = "fr-par"
+    scw_bucket: str = "noa-dev"
+    environment: str = "development"
+    log_level: str = "INFO"
+
+
+settings = Settings()  # type: ignore[call-arg]
