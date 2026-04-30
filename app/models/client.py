@@ -1,10 +1,17 @@
+from __future__ import annotations
+
 import uuid
+from typing import TYPE_CHECKING
 
 from sqlalchemy import UUID, ForeignKey, Index, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
 from app.models.mixins import PrimaryKeyMixin, TimestampMixin
+
+if TYPE_CHECKING:
+    from app.models.contractor import Contractor
+    from app.models.job import Job
 
 
 class Client(PrimaryKeyMixin, TimestampMixin, Base):

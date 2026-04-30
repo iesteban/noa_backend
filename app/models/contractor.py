@@ -1,11 +1,18 @@
+from __future__ import annotations
+
 import enum
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, Enum, Integer, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
 from app.models.mixins import PrimaryKeyMixin, TimestampMixin
+
+if TYPE_CHECKING:
+    from app.models.client import Client
+    from app.models.job import Job
 
 
 class Channel(enum.StrEnum):

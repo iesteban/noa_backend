@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import enum
 import uuid
 from datetime import datetime
+from typing import Any
 
 from sqlalchemy import UUID, DateTime, Enum, ForeignKey, Index, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
@@ -33,7 +36,7 @@ class ConversationSession(PrimaryKeyMixin, TimestampMixin, Base):
     client_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("clients.id"), index=True
     )
-    context: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    context: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
     last_active_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default="now()"
     )
