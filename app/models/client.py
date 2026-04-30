@@ -29,5 +29,5 @@ class Client(PrimaryKeyMixin, TimestampMixin, Base):
     nif: Mapped[str | None] = mapped_column(String(20))
     notes: Mapped[str | None] = mapped_column(String(2000))
 
-    contractor: Mapped["Contractor"] = relationship(back_populates="clients")  # noqa: F821
-    jobs: Mapped[list["Job"]] = relationship(back_populates="client")  # noqa: F821
+    contractor: Mapped[Contractor] = relationship(back_populates="clients")  # noqa: F821
+    jobs: Mapped[list[Job]] = relationship(back_populates="client")  # noqa: F821

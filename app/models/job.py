@@ -39,5 +39,5 @@ class Job(PrimaryKeyMixin, TimestampMixin, Base):
     )
     voice_note_url: Mapped[str | None] = mapped_column(String(500))
 
-    contractor: Mapped["Contractor"] = relationship(back_populates="jobs")  # noqa: F821
-    client: Mapped["Client | None"] = relationship(back_populates="jobs")  # noqa: F821
+    contractor: Mapped[Contractor] = relationship(back_populates="jobs")  # noqa: F821
+    client: Mapped[Client | None] = relationship(back_populates="jobs")  # noqa: F821

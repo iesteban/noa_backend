@@ -41,7 +41,7 @@ class ConversationSession(PrimaryKeyMixin, TimestampMixin, Base):
         DateTime(timezone=True), nullable=False, server_default="now()"
     )
 
-    messages: Mapped[list["Message"]] = relationship(back_populates="session")
+    messages: Mapped[list[Message]] = relationship(back_populates="session")
 
 
 class Message(PrimaryKeyMixin, TimestampMixin, Base):
@@ -54,4 +54,4 @@ class Message(PrimaryKeyMixin, TimestampMixin, Base):
     content: Mapped[str] = mapped_column(Text, nullable=False)
     media_url: Mapped[str | None] = mapped_column(String(500))
 
-    session: Mapped["ConversationSession"] = relationship(back_populates="messages")
+    session: Mapped[ConversationSession] = relationship(back_populates="messages")
