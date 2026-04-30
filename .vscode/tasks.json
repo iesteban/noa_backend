@@ -1,0 +1,89 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "DB: start postgres",
+      "type": "shell",
+      "command": "docker compose up -d",
+      "group": "none",
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "DB: stop postgres",
+      "type": "shell",
+      "command": "docker compose down",
+      "group": "none",
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "DB: run migrations",
+      "type": "shell",
+      "command": "alembic upgrade head",
+      "group": "none",
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "DB: new migration",
+      "type": "shell",
+      "command": "alembic revision --autogenerate -m \"${input:migrationName}\"",
+      "group": "none",
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "Test: all",
+      "type": "shell",
+      "command": "pytest -v",
+      "group": { "kind": "test", "isDefault": true },
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "Test: unit only",
+      "type": "shell",
+      "command": "pytest tests/unit -v",
+      "group": "test",
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "Test: integration only",
+      "type": "shell",
+      "command": "pytest tests/integration -v",
+      "group": "test",
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "Test: with coverage",
+      "type": "shell",
+      "command": "pytest --cov=app --cov-report=term-missing",
+      "group": "test",
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "Lint: ruff check",
+      "type": "shell",
+      "command": "ruff check .",
+      "group": "none",
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "Lint: ruff fix",
+      "type": "shell",
+      "command": "ruff check --fix .",
+      "group": "none",
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "Type: mypy",
+      "type": "shell",
+      "command": "mypy app",
+      "group": "none",
+      "presentation": { "reveal": "always", "panel": "shared" }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "migrationName",
+      "description": "Migration description (snake_case)",
+      "type": "promptString"
+    }
+  ]
+}
