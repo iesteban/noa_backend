@@ -59,10 +59,10 @@ async def resolve_routing(
                 candidates=[],
             )
 
-        rows = await db.execute(
+        client_rows = await db.execute(
             select(Client).where(Client.phone_number == phone_number)
         )
-        clients = rows.scalars().all()
+        clients = client_rows.scalars().all()
         if len(clients) == 1:
             return RoutingResult(
                 user_type=UserType.client,
@@ -72,10 +72,10 @@ async def resolve_routing(
             )
         if len(clients) > 1:
             contractor_ids = [c.contractor_id for c in clients]
-            rows = await db.execute(
+            contractor_rows = await db.execute(
                 select(Contractor).where(Contractor.id.in_(contractor_ids))
             )
-            contractor_map = {c.id: c for c in rows.scalars().all()}
+            contractor_map = {c.id: c for c in contractor_rows.scalars().all()}
             candidates = [
                 (
                     c.contractor_id,
