@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -13,6 +13,9 @@ def client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
     mock_settings = MagicMock()
     mock_settings.telegram_webhook_secret = SECRET
     monkeypatch.setattr("app.api.webhook.settings", mock_settings)
+    # _handle_update is async and touches DB + Telegram API; stub it out so
+    # tests that check HTTP behaviour don't need a real database or network.
+    monkeypatch.setattr("app.api.webhook._handle_update", AsyncMock())
     return TestClient(app)
 
 
