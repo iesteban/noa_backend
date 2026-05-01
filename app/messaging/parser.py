@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import logging
 
-from app.schemas.telegram import InboundMessage, MessageType, TelegramUpdate
+from app.messaging.types import InboundMessage, MessageType
+from app.schemas.telegram import TelegramUpdate
 
 logger = logging.getLogger(__name__)
 

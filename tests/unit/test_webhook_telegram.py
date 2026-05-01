@@ -13,9 +13,9 @@ def client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
     mock_settings = MagicMock()
     mock_settings.telegram_webhook_secret = SECRET
     monkeypatch.setattr("app.api.webhook.settings", mock_settings)
-    # _handle_update is async and touches DB + Telegram API; stub it out so
+    # _handle_telegram_update is async and touches DB + Telegram API; stub it out so
     # tests that check HTTP behaviour don't need a real database or network.
-    monkeypatch.setattr("app.api.webhook._handle_update", AsyncMock())
+    monkeypatch.setattr("app.api.webhook._handle_telegram_update", AsyncMock())
     return TestClient(app)
 
 
@@ -65,8 +65,8 @@ class TestResponseShape:
 
 
 class TestBackgroundDispatch:
-    def test_handle_update_called_for_text(self, client: TestClient) -> None:
-        with patch("app.api.webhook._handle_update") as mock_handle:
+    def test_handle_telegram_update_called_for_text(self, client: TestClient) -> None:
+        with patch("app.api.webhook._handle_telegram_update") as mock_handle:
             client.post(
                 "/webhook/telegram",
                 json=_text_update(),
@@ -76,7 +76,7 @@ class TestBackgroundDispatch:
             update_arg = mock_handle.call_args[0][0]
             assert update_arg.update_id == 1
 
-    def test_handle_update_called_for_voice(self, client: TestClient) -> None:
+    def test_handle_telegram_update_called_for_voice(self, client: TestClient) -> None:
         payload = {
             "update_id": 2,
             "message": {
@@ -86,7 +86,7 @@ class TestBackgroundDispatch:
                 "voice": {"file_id": "v1", "file_unique_id": "vu1", "duration": 4},
             },
         }
-        with patch("app.api.webhook._handle_update") as mock_handle:
+        with patch("app.api.webhook._handle_telegram_update") as mock_handle:
             client.post(
                 "/webhook/telegram",
                 json=payload,
@@ -94,7 +94,7 @@ class TestBackgroundDispatch:
             )
             mock_handle.assert_called_once()
 
-    def test_handle_update_called_for_photo(self, client: TestClient) -> None:
+    def test_handle_telegram_update_called_for_photo(self, client: TestClient) -> None:
         payload = {
             "update_id": 3,
             "message": {
@@ -104,7 +104,7 @@ class TestBackgroundDispatch:
                 "photo": [{"file_id": "p1", "file_unique_id": "pu1", "width": 100, "height": 100}],
             },
         }
-        with patch("app.api.webhook._handle_update") as mock_handle:
+        with patch("app.api.webhook._handle_telegram_update") as mock_handle:
             client.post(
                 "/webhook/telegram",
                 json=payload,

@@ -6,6 +6,7 @@ from app.config import settings
 from app.database import async_session_factory
 from app.messaging.parser import parse_update
 from app.messaging.telegram_sender import send_message
+from app.messaging.types import InboundMessage, MessageSender
 from app.models.session import MessageRole
 from app.schemas.telegram import TelegramUpdate
 from app.services.routing import resolve_routing
@@ -19,11 +20,7 @@ _ONBOARDING_MESSAGE = (
 )
 
 
-async def _handle_update(update: TelegramUpdate) -> None:
-    inbound = parse_update(update)
-    if inbound is None:
-        return
-
+async def _dispatch(inbound: InboundMessage, send: MessageSender, channel: str) -> None:
     logger.info(
         "Dispatching update %d: type=%s chat_id=%d",
         inbound.update_id,
@@ -39,15 +36,15 @@ async def _handle_update(update: TelegramUpdate) -> None:
                 lines = "\n".join(
                     f"{i + 1}. {name}" for i, (_, name) in enumerate(routing.candidates)
                 )
-                await send_message(inbound.chat_id, f"¿Con quién quieres contactar?\n{lines}")
+                await send(inbound.chat_id, f"¿Con quién quieres contactar?\n{lines}")
             else:
-                await send_message(inbound.chat_id, _ONBOARDING_MESSAGE)
+                await send(inbound.chat_id, _ONBOARDING_MESSAGE)
             return
 
         session = await get_or_create_session(
             db,
             session_key=str(inbound.chat_id),
-            channel="telegram",
+            channel=channel,
             routing=routing,
         )
         await append_message(
@@ -57,6 +54,13 @@ async def _handle_update(update: TelegramUpdate) -> None:
             inbound.text or "",
         )
         # AI response assembled in #10
+
+
+async def _handle_telegram_update(update: TelegramUpdate) -> None:
+    inbound = parse_update(update)
+    if inbound is None:
+        return
+    await _dispatch(inbound, send_message, "telegram")
 
 
 @router.post("/telegram")
@@ -70,6 +74,6 @@ async def telegram_webhook(
 
     body = await request.json()
     update = TelegramUpdate.model_validate(body)
-    background_tasks.add_task(_handle_update, update)
+    background_tasks.add_task(_handle_telegram_update, update)
 
     return {"ok": "true"}
