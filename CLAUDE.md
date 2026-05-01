@@ -54,6 +54,28 @@ One branch per issue. Reference the issue in the PR body (`Closes #N`).
 
 Do not add `Co-Authored-By` trailers to commit messages.
 
+## Before opening a PR
+
+Run these checks in order and fix any issues before pushing:
+
+```bash
+.venv/bin/ruff check --fix app/ tests/   # auto-fix lint issues
+.venv/bin/mypy app                        # type-check; fix any errors manually
+.venv/bin/pytest tests/unit/             # all unit tests must pass
+```
+
+Do not open a PR if any of these fail.
+
+## After opening a PR
+
+Poll CI until it finishes, then report the result:
+
+```bash
+until gh pr checks <PR> 2>&1 | grep -qv pending; do sleep 8; done && gh pr checks <PR>
+```
+
+If CI fails, read the logs (`gh run view <run-id> --log-failed`), fix the issue, commit, push, and poll again.
+
 ## Running tests
 
 ```bash
@@ -139,8 +161,11 @@ All calendar operations go through the `CalendarProvider` protocol (`app/calenda
 
 ## Key references
 
-- Product overview: `noa_knowledge/product/overview.md`
-- Full AI architecture: `noa_knowledge/product/ai-architecture.md`
-- Data model: `noa_knowledge/product/data-model.md`
-- Conversation design: `noa_knowledge/product/conversation-design.md`
-- Architecture decisions: `noa_knowledge/decisions/`
+`noa_knowledge` must be checked out as a sibling directory (`../noa_knowledge`).
+All paths below are relative to that repo root.
+
+- Product overview: `../noa_knowledge/product/overview.md`
+- Full AI architecture: `../noa_knowledge/product/ai-architecture.md`
+- Data model: `../noa_knowledge/product/data-model.md`
+- Conversation design: `../noa_knowledge/product/conversation-design.md`
+- Architecture decisions: `../noa_knowledge/decisions/`
