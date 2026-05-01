@@ -1,9 +1,8 @@
 import pytest
 
 from app.messaging.parser import parse_update
+from app.messaging.types import InboundMessage, MessageType
 from app.schemas.telegram import (
-    InboundMessage,
-    MessageType,
     TelegramChat,
     TelegramContact,
     TelegramDocument,

@@ -1,17 +1,6 @@
 from __future__ import annotations
 
-import enum
-
 from pydantic import BaseModel, ConfigDict, Field
-
-
-class MessageType(enum.StrEnum):
-    text = "text"
-    voice = "voice"
-    photo = "photo"
-    document = "document"
-    contact = "contact"
-    unknown = "unknown"
 
 
 class TelegramUser(BaseModel):
@@ -78,11 +67,3 @@ class TelegramUpdate(BaseModel):
     edited_message: TelegramMessage | None = None
 
 
-class InboundMessage(BaseModel):
-    update_id: int
-    chat_id: int
-    # Populated from a contact share; routing (issue #5) resolves from DB by telegram_chat_id
-    phone_number: str | None
-    message_type: MessageType
-    text: str | None
-    file_id: str | None
