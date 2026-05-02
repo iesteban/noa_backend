@@ -1,0 +1,22 @@
+# Copy to terraform.tfvars and fill in values. Never commit terraform.tfvars.
+
+environment = "production"
+region      = "fr-par"
+zone        = "fr-par-1"
+image_tag   = "latest"   # overridden by deploy.sh with the git SHA
+
+# Database
+db_node_type = "DB-DEV-S"
+db_name      = "noa"
+db_user      = "noa"
+db_password  = "CHANGE_ME"
+
+# Application secrets
+anthropic_api_key       = "sk-ant-..."
+telegram_bot_token      = "123456:ABC..."
+telegram_webhook_secret = "CHANGE_ME"
+openai_api_key          = "sk-..."
+
+# Optional: leave empty to use the Scaleway container URL
+api_domain = ""
+# api_domain = "api.noa.app"
