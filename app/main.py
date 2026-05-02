@@ -6,4 +6,4 @@ from app.api.webhook import router as webhook_router
 app = FastAPI(title="Noa Backend", version="0.1.0")
 
 app.include_router(health_router)
-app.include_router(webhook_router, prefix="/webhook")
+app.include_router(webhook_router)

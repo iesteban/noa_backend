@@ -35,19 +35,19 @@ def _text_update(update_id: int = 1, text: str = "Hola") -> dict:  # type: ignor
 class TestSecretTokenValidation:
     def test_valid_secret_returns_200(self, client: TestClient) -> None:
         response = client.post(
-            "/webhook/telegram",
+            "/telegram",
             json=_text_update(),
             headers={"X-Telegram-Bot-Api-Secret-Token": SECRET},
         )
         assert response.status_code == 200
 
     def test_missing_secret_returns_403(self, client: TestClient) -> None:
-        response = client.post("/webhook/telegram", json=_text_update())
+        response = client.post("/telegram", json=_text_update())
         assert response.status_code == 403
 
     def test_wrong_secret_returns_403(self, client: TestClient) -> None:
         response = client.post(
-            "/webhook/telegram",
+            "/telegram",
             json=_text_update(),
             headers={"X-Telegram-Bot-Api-Secret-Token": "wrong"},
         )
@@ -57,7 +57,7 @@ class TestSecretTokenValidation:
 class TestResponseShape:
     def test_returns_ok(self, client: TestClient) -> None:
         response = client.post(
-            "/webhook/telegram",
+            "/telegram",
             json=_text_update(),
             headers={"X-Telegram-Bot-Api-Secret-Token": SECRET},
         )
@@ -68,7 +68,7 @@ class TestBackgroundDispatch:
     def test_handle_telegram_update_called_for_text(self, client: TestClient) -> None:
         with patch("app.api.webhook._handle_telegram_update") as mock_handle:
             client.post(
-                "/webhook/telegram",
+                "/telegram",
                 json=_text_update(),
                 headers={"X-Telegram-Bot-Api-Secret-Token": SECRET},
             )
@@ -88,7 +88,7 @@ class TestBackgroundDispatch:
         }
         with patch("app.api.webhook._handle_telegram_update") as mock_handle:
             client.post(
-                "/webhook/telegram",
+                "/telegram",
                 json=payload,
                 headers={"X-Telegram-Bot-Api-Secret-Token": SECRET},
             )
@@ -106,7 +106,7 @@ class TestBackgroundDispatch:
         }
         with patch("app.api.webhook._handle_telegram_update") as mock_handle:
             client.post(
-                "/webhook/telegram",
+                "/telegram",
                 json=payload,
                 headers={"X-Telegram-Bot-Api-Secret-Token": SECRET},
             )
@@ -117,7 +117,7 @@ class TestUnhandledUpdateTypes:
     def test_update_without_message_does_not_crash(self, client: TestClient) -> None:
         payload = {"update_id": 99}
         response = client.post(
-            "/webhook/telegram",
+            "/telegram",
             json=payload,
             headers={"X-Telegram-Bot-Api-Secret-Token": SECRET},
         )
@@ -133,7 +133,7 @@ class TestUnhandledUpdateTypes:
             },
         }
         response = client.post(
-            "/webhook/telegram",
+            "/telegram",
             json=payload,
             headers={"X-Telegram-Bot-Api-Secret-Token": SECRET},
         )

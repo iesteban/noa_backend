@@ -27,6 +27,7 @@ dev = [
     "pytest>=8.3",
     "pytest-asyncio>=0.24",
     "pytest-cov>=6.0",
+    "pytest-env>=1.1",
     "ruff>=0.8",
     "mypy>=1.13",
     "httpx>=0.28",           # TestClient
@@ -47,3 +48,6 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+env = [
+    "DATABASE_URL=postgresql+asyncpg://noa:noa@localhost:5432/noa_test",
+]
