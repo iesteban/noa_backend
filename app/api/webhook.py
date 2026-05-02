@@ -10,15 +10,12 @@ from app.messaging.telegram_sender import send_message
 from app.messaging.types import InboundMessage, MessageSender
 from app.models.session import MessageRole
 from app.schemas.telegram import TelegramUpdate
+from app.services.onboarding import handle_onboarding_message
 from app.services.routing import resolve_routing
 from app.services.session import append_message, get_or_create_session
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
-
-_ONBOARDING_MESSAGE = (
-    "Hola, soy Noa. ¿Eres profesional autónomo o quieres contactar con algún profesional?"
-)
 
 
 async def _dispatch(inbound: InboundMessage, send: MessageSender, channel: str) -> None:
@@ -39,7 +36,10 @@ async def _dispatch(inbound: InboundMessage, send: MessageSender, channel: str) 
                 )
                 await send(inbound.chat_id, f"¿Con quién quieres contactar?\n{lines}")
             else:
-                await send(inbound.chat_id, _ONBOARDING_MESSAGE)
+                reply = await handle_onboarding_message(
+                    db, str(inbound.chat_id), channel, inbound.text
+                )
+                await send(inbound.chat_id, reply)
             return
 
         session = await get_or_create_session(
