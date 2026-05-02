@@ -8,6 +8,31 @@ on:
 jobs:
   lint-and-test:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: noa
+          POSTGRES_PASSWORD: noa
+          POSTGRES_DB: noa
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql+asyncpg://noa:noa@localhost/noa
+      TELEGRAM_BOT_TOKEN: dummy
+      TELEGRAM_WEBHOOK_SECRET: dummy
+      ANTHROPIC_API_KEY: dummy
+      OPENAI_API_KEY: dummy
+      SCW_ACCESS_KEY: dummy
+      SCW_SECRET_KEY: dummy
+
     steps:
       - uses: actions/checkout@v4
 
@@ -25,13 +50,11 @@ jobs:
       - name: Type check
         run: mypy app
 
-      - name: Test
-        env:
-          DATABASE_URL: postgresql+asyncpg://noa:noa@localhost/noa
-          TELEGRAM_BOT_TOKEN: dummy
-          TELEGRAM_WEBHOOK_SECRET: dummy
-          ANTHROPIC_API_KEY: dummy
-          OPENAI_API_KEY: dummy
-          SCW_ACCESS_KEY: dummy
-          SCW_SECRET_KEY: dummy
+      - name: Unit tests
         run: pytest tests/unit --cov=app --cov-report=term-missing
+
+      - name: Apply migrations
+        run: alembic upgrade head
+
+      - name: Integration tests
+        run: pytest tests/integration

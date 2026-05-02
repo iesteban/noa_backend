@@ -2,6 +2,7 @@ import logging
 
 from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Request
 
+from app.ai.claude import call_claude
 from app.config import settings
 from app.database import async_session_factory
 from app.messaging.parser import parse_update
@@ -53,7 +54,11 @@ async def _dispatch(inbound: InboundMessage, send: MessageSender, channel: str) 
             MessageRole.user,
             inbound.text or "",
         )
-        # AI response assembled in #10
+
+        reply = await call_claude(db, session, inbound.text or "")
+
+        await append_message(db, session.id, MessageRole.assistant, reply)
+        await send(inbound.chat_id, reply)
 
 
 async def _handle_telegram_update(update: TelegramUpdate) -> None:
