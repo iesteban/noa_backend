@@ -11,10 +11,10 @@ import asyncio
 from datetime import UTC, datetime
 
 import pytest
-from alembic import command
 from alembic.config import Config
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from alembic import command
 from app.config import settings
 from app.database import Base
 
