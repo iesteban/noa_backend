@@ -1,0 +1,9 @@
+# Local terraform state (production state lives in Scaleway Object Storage)
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.backup
+*.tfplan
+
+# Secrets — never commit
+terraform.tfvars
