@@ -1,6 +1,6 @@
 output "lb_ip" {
-  description = "Public IP of the load balancer — point your DNS A record here"
-  value       = scaleway_lb_ip.main.ip_address
+  description = "Public IP of the load balancer (only when enable_lb = true)"
+  value       = var.enable_lb ? scaleway_lb_ip.main[0].ip_address : null
 }
 
 output "container_url" {

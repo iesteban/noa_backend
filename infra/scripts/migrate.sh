@@ -23,8 +23,7 @@ cd "$TERRAFORM_DIR"
 export DATABASE_URL="$(terraform output -raw database_url)"
 
 echo "==> Running: alembic $COMMAND $REVISION"
-echo "==> Database: $DATABASE_URL"
 cd "$REPO_ROOT"
-alembic "$COMMAND" "$REVISION"
+.venv/bin/alembic "$COMMAND" "$REVISION"
 
 echo "==> Migration complete."
