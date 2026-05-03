@@ -65,8 +65,8 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
-      SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
 
     steps:
       - uses: actions/checkout@v4
@@ -77,11 +77,7 @@ jobs:
 
       - name: Terraform init (dev state)
         working-directory: infra/terraform
-        run: |
-          terraform init \
-            -backend-config=dev.tfbackend \
-            -backend-config="access_key=$SCW_ACCESS_KEY" \
-            -backend-config="secret_key=$SCW_SECRET_KEY"
+        run: terraform init -backend-config=dev.tfbackend
 
       - name: Get registry endpoint
         id: registry
@@ -102,15 +98,22 @@ jobs:
           platforms: linux/amd64
           tags: ${{ steps.registry.outputs.endpoint }}/noa-api:${{ github.sha }}
 
+      - name: Write dev tfvars
+        run: |
+          cat > infra/terraform/terraform.tfvars.dev <<'EOF'
+          environment = "dev"
+          enable_lb   = false
+          EOF
+
       - name: Deploy (terraform apply)
         working-directory: infra/terraform
+        env:
+          TF_VAR_db_password: ${{ secrets.TF_VAR_DB_PASSWORD }}
+          TF_VAR_anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          TF_VAR_telegram_bot_token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TF_VAR_telegram_webhook_secret: ${{ secrets.TELEGRAM_WEBHOOK_SECRET }}
+          TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY }}
         run: |
           terraform apply -auto-approve \
-            -var "environment=dev" \
-            -var "image_tag=${{ github.sha }}" \
-            -var "enable_lb=false" \
-            -var "db_password=${{ secrets.TF_VAR_DB_PASSWORD }}" \
-            -var "anthropic_api_key=${{ secrets.ANTHROPIC_API_KEY }}" \
-            -var "telegram_bot_token=${{ secrets.TELEGRAM_BOT_TOKEN }}" \
-            -var "telegram_webhook_secret=${{ secrets.TELEGRAM_WEBHOOK_SECRET }}" \
-            -var "openai_api_key=${{ secrets.OPENAI_API_KEY }}"
+            -var-file=terraform.tfvars.dev \
+            -var "image_tag=${{ github.sha }}"
