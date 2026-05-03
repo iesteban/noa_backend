@@ -2,7 +2,8 @@
 
 Each test gets a fresh async engine bound to its own event loop (the only way
 to reliably avoid "Future attached to a different loop" errors with asyncpg).
-Schema is created once per session via a sync fixture using asyncio.run().
+Schema is built once per session via alembic upgrade head, then torn down via
+downgrade base so the test DB is always left clean.
 """
 from __future__ import annotations
 
@@ -10,12 +11,14 @@ import asyncio
 from datetime import UTC, datetime
 
 import pytest
+from alembic.config import Config
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from alembic import command
 from app.config import settings
 from app.database import Base
 
-# Import all models so Base.metadata is fully populated before create_all.
+# Import all models so Base.metadata is fully populated for the db fixture.
 from app.models.client import Client
 from app.models.contractor import Channel, Contractor
 from app.models.job import Job  # noqa: F401 — registers table with Base.metadata
@@ -26,29 +29,35 @@ def _make_engine():  # type: ignore[return]
     return create_async_engine(settings.database_url, echo=False)
 
 
+def _alembic_cfg() -> Config:
+    cfg = Config("alembic.ini")
+    # alembic/env.py reads settings.database_url at runtime, so no override needed.
+    return cfg
+
+
 @pytest.fixture(scope="session", autouse=True)
 def _schema() -> None:
-    """Drop and create all tables once for the entire test session.
+    """Guarantee a clean schema before the session; tear it down after.
 
-    Intentionally sync: asyncio.run() creates an isolated event loop for setup
-    so schema creation doesn't bind any connections to the test loops.
+    1. stamp base  — syncs alembic_version with whatever is actually in the DB
+    2. drop_all    — removes any leftover tables from a previous run
+    3. upgrade head — builds the schema via real migrations
+    4. downgrade base — tears it all down so the test DB is left empty
+
+    Intentionally sync: alembic's command layer and asyncio.run() each create
+    their own isolated event loop so they don't interfere with test loops.
     """
-    async def _create() -> None:
-        engine = _make_engine()
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.drop_all)
-            await conn.run_sync(Base.metadata.create_all)
-        await engine.dispose()
-
-    async def _drop() -> None:
+    async def _drop_all() -> None:
         engine = _make_engine()
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.drop_all)
         await engine.dispose()
 
-    asyncio.run(_create())
+    command.stamp(_alembic_cfg(), "base")
+    asyncio.run(_drop_all())
+    command.upgrade(_alembic_cfg(), "head")
     yield  # type: ignore[misc]
-    asyncio.run(_drop())
+    command.downgrade(_alembic_cfg(), "base")
 
 
 @pytest.fixture

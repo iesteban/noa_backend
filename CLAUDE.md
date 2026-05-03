@@ -54,6 +54,23 @@ One branch per issue. Reference the issue in the PR body (`Closes #N`).
 
 Do not add `Co-Authored-By` trailers to commit messages.
 
+## Integration tests
+
+Every feature or tool handler must have a corresponding integration test in `tests/integration/`. Integration tests hit a real PostgreSQL instance (via `docker compose up -d`) — do not mock the database.
+
+Minimum coverage per piece of work:
+- **New service or tool handler**: at least one happy-path test and one error/edge-case test
+- **New API endpoint**: test the full request→response cycle including DB state
+- **New migration**: test that `alembic upgrade head` + `alembic downgrade -1` both succeed cleanly
+
+Run integration tests before opening a PR:
+
+```bash
+docker compose up -d
+alembic upgrade head
+.venv/bin/pytest tests/integration/
+```
+
 ## Before opening a PR
 
 Run these checks in order and fix any issues before pushing:
@@ -62,6 +79,7 @@ Run these checks in order and fix any issues before pushing:
 .venv/bin/ruff check --fix app/ tests/   # auto-fix lint issues
 .venv/bin/mypy app                        # type-check; fix any errors manually
 .venv/bin/pytest tests/unit/             # all unit tests must pass
+.venv/bin/pytest tests/integration/      # integration tests must pass
 ```
 
 Do not open a PR if any of these fail.

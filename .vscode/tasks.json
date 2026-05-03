@@ -82,12 +82,24 @@
       "command": "mypy app",
       "group": "none",
       "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "Telegram: set webhook",
+      "type": "shell",
+      "command": "bash scripts/set_webhook.sh ${input:ngrokUrl}",
+      "group": "none",
+      "presentation": { "reveal": "always", "panel": "shared" }
     }
   ],
   "inputs": [
     {
       "id": "migrationName",
       "description": "Migration description (snake_case)",
+      "type": "promptString"
+    },
+    {
+      "id": "ngrokUrl",
+      "description": "ngrok HTTPS URL (e.g. https://xxxx.ngrok-free.app)",
       "type": "promptString"
     }
   ]
