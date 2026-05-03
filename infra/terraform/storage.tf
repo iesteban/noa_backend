@@ -29,11 +29,12 @@ resource "scaleway_iam_policy" "bucket_readwrite" {
 
   rule {
     project_ids          = [scaleway_object_bucket.app.project_id]
-    permission_set_names = ["ObjectStorageObjectsReadWrite", "ObjectStorageObjectsDelete"]
+    permission_set_names = ["ObjectStorageObjectsRead", "ObjectStorageObjectsWrite", "ObjectStorageObjectsDelete"]
   }
 }
 
 resource "scaleway_iam_api_key" "api" {
   application_id = scaleway_iam_application.api.id
   description    = "noa-api bucket access (${var.environment})"
+  expires_at     = "2027-05-01T00:00:00Z"
 }

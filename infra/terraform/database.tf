@@ -9,7 +9,7 @@ resource "scaleway_rdb_instance" "main" {
   region         = var.region
 
   # Volume auto-grows up to 50 GB.
-  volume_type       = "bssd"
+  volume_type       = "sbs_5k"
   volume_size_in_gb = 5
 }
 
@@ -41,9 +41,11 @@ resource "scaleway_rdb_acl" "main" {
   region      = var.region
 
   acl_rules {
-    # Allow the load balancer's public IP. Tighten to a private endpoint
-    # once VPC peering between RDB and Serverless Containers is available.
     ip          = "${scaleway_lb_ip.main.ip_address}/32"
     description = "Load balancer egress"
+  }
+  acl_rules {
+    ip          = "66.81.172.176/32"
+    description = "Developer local machine"
   }
 }

@@ -1,8 +1,12 @@
+import os
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_ENV_FILE = ".env.production" if os.getenv("ENVIRONMENT") == "production" else ".env"
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=_ENV_FILE, extra="ignore")
 
     database_url: str
     telegram_bot_token: str

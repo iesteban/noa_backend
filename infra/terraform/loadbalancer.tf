@@ -21,7 +21,7 @@ data "dns_a_record_set" "container" {
 resource "scaleway_lb_backend" "api" {
   lb_id            = scaleway_lb.main.id
   name             = "noa-api"
-  forward_protocol = "https"
+  forward_protocol = "tcp"
   forward_port     = 443
 
   # IPs resolved from the container's managed HTTPS endpoint.
@@ -37,9 +37,9 @@ resource "scaleway_lb_backend" "api" {
     host_header      = trimprefix(scaleway_container.api.domain_name, "https://")
   }
 
-  health_check_max_retries  = 3
-  health_check_timeout_ms   = 3000
-  health_check_interval_ms  = 10000
+  health_check_max_retries = 3
+  health_check_timeout     = "3s"
+  health_check_delay       = "10s"
 }
 
 # HTTPS frontend — terminate TLS at the LB, issue a managed Let's Encrypt cert.
@@ -59,34 +59,6 @@ resource "scaleway_lb_frontend" "https" {
   name         = "https"
   inbound_port = 443
 
-  dynamic "certificate_ids" {
-    for_each = scaleway_lb_certificate.main
-    content {
-      certificate_ids = [certificate_ids.value.id]
-    }
-  }
+  certificate_ids = [for c in scaleway_lb_certificate.main : c.id]
 }
 
-# HTTP frontend — redirects to HTTPS.
-resource "scaleway_lb_frontend" "http" {
-  lb_id        = scaleway_lb.main.id
-  backend_id   = scaleway_lb_backend.api.id
-  name         = "http"
-  inbound_port = 80
-
-  acl {
-    name = "redirect-to-https"
-    action {
-      type = "redirect"
-      redirect {
-        type = "location"
-        target = "https://${var.api_domain != "" ? var.api_domain : scaleway_lb_ip.main.ip_address}"
-        code   = 301
-      }
-    }
-    match {
-      http_filter        = "path_begin"
-      http_filter_value  = ["/"]
-    }
-  }
-}

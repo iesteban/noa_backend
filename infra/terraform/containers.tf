@@ -19,7 +19,7 @@ resource "scaleway_container" "api" {
   registry_image = local.image
   port           = 8000
   cpu_limit      = 1120   # milli-vCPU
-  memory_limit   = 512    # MB
+  memory_limit   = 1120   # MB (must match cpu_limit in milli-vCPU)
 
   min_scale = 1   # keep one instance warm — eliminates cold starts for webhooks
   max_scale = 5
