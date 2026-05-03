@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import date
 
-from sqlalchemy import text
+from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.client import Client
@@ -21,11 +21,10 @@ async def create_invoice(
 ) -> Invoice:
     """Create an Invoice with lines. Atomically increments invoice_counter."""
     result = await db.execute(
-        text(
-            "UPDATE contractors SET invoice_counter = invoice_counter + 1 "
-            "WHERE id = :id RETURNING invoice_counter"
-        ),
-        {"id": contractor.id},
+        update(Contractor)
+        .where(Contractor.id == contractor.id)
+        .values(invoice_counter=Contractor.invoice_counter + 1)
+        .returning(Contractor.invoice_counter)
     )
     counter: int = result.scalar_one()
     invoice_number = f"{invoice_date.year}-{counter:03d}"
