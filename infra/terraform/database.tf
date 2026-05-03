@@ -25,6 +25,10 @@ resource "scaleway_rdb_user" "noa" {
   password    = var.db_password
   is_admin    = false
   region      = var.region
+
+  lifecycle {
+    ignore_changes = [password]
+  }
 }
 
 resource "scaleway_rdb_privilege" "noa" {
