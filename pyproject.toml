@@ -49,5 +49,5 @@ ignore_missing_imports = true
 asyncio_mode = "auto"
 testpaths = ["tests"]
 env = [
-    "DATABASE_URL=postgresql+asyncpg://noa:noa@localhost:5432/noa_test",
+    "D:DATABASE_URL=postgresql+asyncpg://noa:noa@localhost:5432/noa_test",
 ]
