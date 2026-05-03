@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     scw_bucket: str = "noa-dev"
     environment: str = "development"
     log_level: str = "INFO"
+    google_client_id: str = ""
+    google_client_secret: str = ""
+    google_redirect_uri: str = "http://localhost:8000/auth/google/callback"
 
 
 settings = Settings()  # type: ignore[call-arg]
