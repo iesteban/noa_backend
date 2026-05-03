@@ -1,9 +1,13 @@
+<<<<<<< HEAD
 from app.models.appointment import (
     Appointment,
     AppointmentStatus,
     CalendarProviderEnum,
     CalendarToken,
 )
+=======
+from app.models.budget import Budget, BudgetLine, BudgetStatus
+>>>>>>> 5524a43408f14048b2e9f0be492d53c1aac67b0a
 from app.models.client import Client
 from app.models.contractor import Channel, Contractor
 from app.models.invoice import Invoice, InvoiceLine, InvoiceStatus
@@ -16,6 +20,9 @@ __all__ = [
     "AppointmentStatus",
     "CalendarProviderEnum",
     "CalendarToken",
+    "Budget",
+    "BudgetLine",
+    "BudgetStatus",
     "Channel",
     "Client",
     "Contractor",

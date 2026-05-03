@@ -25,6 +25,10 @@ resource "scaleway_rdb_user" "noa" {
   password    = var.db_password
   is_admin    = false
   region      = var.region
+
+  lifecycle {
+    ignore_changes = [password]
+  }
 }
 
 resource "scaleway_rdb_privilege" "noa" {
@@ -50,5 +54,12 @@ resource "scaleway_rdb_acl" "main" {
   acl_rules {
     ip          = "66.81.172.176/32"
     description = "Developer local machine"
+  }
+  dynamic "acl_rules" {
+    for_each = var.environment == "staging" ? [1] : []
+    content {
+      ip          = "0.0.0.0/0"
+      description = "Serverless containers (no fixed egress IP in staging)"
+    }
   }
 }
