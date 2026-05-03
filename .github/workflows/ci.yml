@@ -79,14 +79,21 @@ jobs:
         with:
           terraform_wrapper: false
 
-      - name: Terraform init (staging state)
-        working-directory: infra/terraform
-        run: terraform init -backend-config=staging.tfbackend
+      - name: Write staging tfvars
+        run: |
+          cat > infra/terraform/terraform.tfvars.staging <<'EOF'
+          environment = "staging"
+          enable_lb   = false
+          EOF
 
       - name: Get registry endpoint
         id: registry
-        working-directory: infra/terraform
-        run: echo "endpoint=$(terraform output -raw registry_endpoint)" >> $GITHUB_OUTPUT
+        run: |
+          endpoint=$(curl -sf \
+            -H "X-Auth-Token: ${{ secrets.SCW_SECRET_KEY }}" \
+            "https://api.scaleway.com/registry/v1/regions/fr-par/namespaces" \
+            | jq -r '.namespaces[] | select(.name == "noa-staging") | .endpoint')
+          echo "endpoint=$endpoint" >> $GITHUB_OUTPUT
 
       - name: Log in to Scaleway Container Registry
         uses: docker/login-action@v3
@@ -102,12 +109,9 @@ jobs:
           platforms: linux/amd64
           tags: ${{ steps.registry.outputs.endpoint }}/noa-api:${{ github.sha }}
 
-      - name: Write staging tfvars
-        run: |
-          cat > infra/terraform/terraform.tfvars.staging <<'EOF'
-          environment = "staging"
-          enable_lb   = false
-          EOF
+      - name: Terraform init (staging state)
+        working-directory: infra/terraform
+        run: terraform init -backend-config=staging.tfbackend
 
       - name: Deploy (terraform apply)
         working-directory: infra/terraform
