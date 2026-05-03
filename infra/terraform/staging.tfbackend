@@ -1,4 +1,4 @@
-bucket = "noa-terraform-state"
+bucket = "noa-tf-state"
 key    = "noa-staging/terraform.tfstate"
 region = "fr-par"
 endpoints = {
