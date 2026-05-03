@@ -51,4 +51,11 @@ resource "scaleway_rdb_acl" "main" {
     ip          = "66.81.172.176/32"
     description = "Developer local machine"
   }
+  dynamic "acl_rules" {
+    for_each = var.environment == "staging" ? [1] : []
+    content {
+      ip          = "0.0.0.0/0"
+      description = "Serverless containers (no fixed egress IP in staging)"
+    }
+  }
 }

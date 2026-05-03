@@ -19,7 +19,7 @@ terraform {
   # Terraform state stored in Scaleway Object Storage (S3-compatible).
   # Bootstrap: create the bucket manually once, then run terraform init.
   backend "s3" {
-    bucket = "noa-terraform-state"
+    bucket = "noa-tf-state"
     key    = "noa/terraform.tfstate"
     region = "fr-par"
     endpoints = {
