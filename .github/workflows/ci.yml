@@ -58,3 +58,59 @@ jobs:
 
       - name: Integration tests
         run: pytest tests/integration
+
+  deploy-dev:
+    needs: lint-and-test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    env:
+      SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+      SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform init (dev state)
+        working-directory: infra/terraform
+        run: |
+          terraform init \
+            -backend-config=dev.tfbackend \
+            -backend-config="access_key=$SCW_ACCESS_KEY" \
+            -backend-config="secret_key=$SCW_SECRET_KEY"
+
+      - name: Get registry endpoint
+        id: registry
+        working-directory: infra/terraform
+        run: echo "endpoint=$(terraform output -raw registry_endpoint)" >> $GITHUB_OUTPUT
+
+      - name: Log in to Scaleway Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ steps.registry.outputs.endpoint }}
+          username: nologin
+          password: ${{ secrets.SCW_SECRET_KEY }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          platforms: linux/amd64
+          tags: ${{ steps.registry.outputs.endpoint }}/noa-api:${{ github.sha }}
+
+      - name: Deploy (terraform apply)
+        working-directory: infra/terraform
+        run: |
+          terraform apply -auto-approve \
+            -var "environment=dev" \
+            -var "image_tag=${{ github.sha }}" \
+            -var "enable_lb=false" \
+            -var "db_password=${{ secrets.TF_VAR_DB_PASSWORD }}" \
+            -var "anthropic_api_key=${{ secrets.ANTHROPIC_API_KEY }}" \
+            -var "telegram_bot_token=${{ secrets.TELEGRAM_BOT_TOKEN }}" \
+            -var "telegram_webhook_secret=${{ secrets.TELEGRAM_WEBHOOK_SECRET }}" \
+            -var "openai_api_key=${{ secrets.OPENAI_API_KEY }}"
