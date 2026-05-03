@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Deploy a new version of the Noa API.
+# Deploy a new image to an existing environment (container update only).
+# Does NOT modify infrastructure (DB, VPC, registry). Use infra.sh for that.
 #
 # Usage:
 #   ./infra/scripts/deploy.sh <environment> [image_tag]
@@ -24,9 +25,17 @@ if [[ ! -f "$TFVARS" ]]; then
   exit 1
 fi
 
-echo "==> Resolving registry endpoint from Terraform state..."
+echo "==> Resolving registry endpoint..."
 cd "$TERRAFORM_DIR"
-REGISTRY_ENDPOINT="$(AWS_ACCESS_KEY_ID=$SCW_ACCESS_KEY AWS_SECRET_ACCESS_KEY=$SCW_SECRET_KEY terraform output -raw registry_endpoint)"
+REGISTRY_ENDPOINT="$(curl -sf \
+  -H "X-Auth-Token: $SCW_SECRET_KEY" \
+  "https://api.scaleway.com/registry/v1/regions/fr-par/namespaces" \
+  | jq -r '.namespaces[] | select(.name == "noa-'"$ENVIRONMENT"'") | .endpoint')"
+
+if [[ -z "$REGISTRY_ENDPOINT" ]]; then
+  echo "Error: could not resolve registry endpoint for environment '$ENVIRONMENT'."
+  exit 1
+fi
 
 IMAGE="$REGISTRY_ENDPOINT/noa-api:$IMAGE_TAG"
 
@@ -42,13 +51,14 @@ docker build \
 echo "==> Pushing image to registry..."
 docker push "$IMAGE"
 
-echo "==> Updating Terraform with new image tag: $IMAGE_TAG..."
+echo "==> Updating container image to: $IMAGE_TAG..."
 AWS_ACCESS_KEY_ID=$SCW_ACCESS_KEY AWS_SECRET_ACCESS_KEY=$SCW_SECRET_KEY \
 terraform apply \
+  -target=scaleway_container.api \
   -var-file="$TFVARS" \
   -var "image_tag=$IMAGE_TAG" \
   -auto-approve
 
 echo ""
 echo "==> Deploy complete."
-echo "    Container URL: $(AWS_ACCESS_KEY_ID=$SCW_ACCESS_KEY AWS_SECRET_ACCESS_KEY=$SCW_SECRET_KEY terraform output -raw container_url)"
+echo "    Container URL: $(AWS_ACCESS_KEY_ID=$SCW_ACCESS_KEY AWS_SECRET_ACCESS_KEY=$SCW_SECRET_KEY terraform output -raw container_url 2>/dev/null || echo '(run terraform output -raw container_url to see it)')"
