@@ -113,7 +113,7 @@ jobs:
         working-directory: infra/terraform
         run: terraform init -backend-config=staging.tfbackend
 
-      - name: Deploy (terraform apply)
+      - name: Deploy (update container image)
         working-directory: infra/terraform
         env:
           TF_VAR_db_password: ${{ secrets.STAGING_DB_PASSWORD }}
@@ -123,5 +123,6 @@ jobs:
           TF_VAR_openai_api_key: ${{ secrets.STAGING_OPENAI_API_KEY }}
         run: |
           terraform apply -auto-approve \
+            -target=scaleway_container.api \
             -var-file=terraform.tfvars.staging \
             -var "image_tag=${{ github.sha }}"
