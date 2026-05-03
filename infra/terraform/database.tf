@@ -40,9 +40,12 @@ resource "scaleway_rdb_acl" "main" {
   instance_id = scaleway_rdb_instance.main.id
   region      = var.region
 
-  acl_rules {
-    ip          = "${scaleway_lb_ip.main.ip_address}/32"
-    description = "Load balancer egress"
+  dynamic "acl_rules" {
+    for_each = var.enable_lb ? [scaleway_lb_ip.main[0].ip_address] : []
+    content {
+      ip          = "${acl_rules.value}/32"
+      description = "Load balancer egress"
+    }
   }
   acl_rules {
     ip          = "66.81.172.176/32"

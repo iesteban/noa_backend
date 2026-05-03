@@ -73,6 +73,14 @@ variable "openai_api_key" {
   sensitive   = true
 }
 
+# --- Optional: load balancer ---
+
+variable "enable_lb" {
+  description = "Whether to deploy a load balancer (static IP, custom domain). Disable in dev to save ~€15/month."
+  type        = bool
+  default     = true
+}
+
 # --- Optional: custom domain ---
 
 variable "api_domain" {
