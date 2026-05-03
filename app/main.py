@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 
+from app.ai import handlers as _ai_handlers  # noqa: F401 — registers all tool handlers
 from app.api.health import router as health_router
 from app.api.webhook import router as webhook_router
 
