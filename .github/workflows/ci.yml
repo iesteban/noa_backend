@@ -58,3 +58,62 @@ jobs:
 
       - name: Integration tests
         run: pytest tests/integration
+
+  deploy-staging:
+    needs: lint-and-test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform init (staging state)
+        working-directory: infra/terraform
+        run: terraform init -backend-config=staging.tfbackend
+
+      - name: Get registry endpoint
+        id: registry
+        working-directory: infra/terraform
+        run: echo "endpoint=$(terraform output -raw registry_endpoint)" >> $GITHUB_OUTPUT
+
+      - name: Log in to Scaleway Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ steps.registry.outputs.endpoint }}
+          username: nologin
+          password: ${{ secrets.SCW_SECRET_KEY }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          platforms: linux/amd64
+          tags: ${{ steps.registry.outputs.endpoint }}/noa-api:${{ github.sha }}
+
+      - name: Write staging tfvars
+        run: |
+          cat > infra/terraform/terraform.tfvars.staging <<'EOF'
+          environment = "staging"
+          enable_lb   = false
+          EOF
+
+      - name: Deploy (terraform apply)
+        working-directory: infra/terraform
+        env:
+          TF_VAR_db_password: ${{ secrets.STAGING_DB_PASSWORD }}
+          TF_VAR_anthropic_api_key: ${{ secrets.STAGING_ANTHROPIC_API_KEY }}
+          TF_VAR_telegram_bot_token: ${{ secrets.STAGING_TELEGRAM_BOT_TOKEN }}
+          TF_VAR_telegram_webhook_secret: ${{ secrets.STAGING_TELEGRAM_WEBHOOK_SECRET }}
+          TF_VAR_openai_api_key: ${{ secrets.STAGING_OPENAI_API_KEY }}
+        run: |
+          terraform apply -auto-approve \
+            -var-file=terraform.tfvars.staging \
+            -var "image_tag=${{ github.sha }}"
