@@ -45,6 +45,9 @@ resource "scaleway_container" "api" {
     OPENAI_API_KEY          = var.openai_api_key
     SCW_ACCESS_KEY          = scaleway_iam_api_key.api.access_key
     SCW_SECRET_KEY          = scaleway_iam_api_key.api.secret_key
+    GOOGLE_CLIENT_ID        = var.google_client_id
+    GOOGLE_CLIENT_SECRET    = var.google_client_secret
+    GOOGLE_REDIRECT_URI     = var.google_redirect_uri
   }
 
   depends_on = [
