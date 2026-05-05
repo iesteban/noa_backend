@@ -121,6 +121,9 @@ jobs:
           TF_VAR_telegram_bot_token: ${{ secrets.STAGING_TELEGRAM_BOT_TOKEN }}
           TF_VAR_telegram_webhook_secret: ${{ secrets.STAGING_TELEGRAM_WEBHOOK_SECRET }}
           TF_VAR_openai_api_key: ${{ secrets.STAGING_OPENAI_API_KEY }}
+          TF_VAR_google_client_id: ${{ secrets.STAGING_GOOGLE_CLIENT_ID }}
+          TF_VAR_google_client_secret: ${{ secrets.STAGING_GOOGLE_CLIENT_SECRET }}
+          TF_VAR_google_redirect_uri: ${{ secrets.STAGING_GOOGLE_REDIRECT_URI }}
         run: |
           terraform apply -auto-approve \
             -target=scaleway_container.api \

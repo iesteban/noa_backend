@@ -19,6 +19,7 @@ from app.config import settings
 from app.database import Base
 
 # Import all models so Base.metadata is fully populated for the db fixture.
+from app.models.appointment import Appointment, CalendarToken  # noqa: F401
 from app.models.client import Client
 from app.models.contractor import Channel, Contractor
 from app.models.job import Job  # noqa: F401 — registers table with Base.metadata

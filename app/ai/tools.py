@@ -133,6 +133,18 @@ _CONTRACTOR_TOOL_LIST: list[dict[str, Any]] = [
         },
     },
     {
+        "name": "connect_google_calendar",
+        "description": (
+            "Generate a one-time link for the contractor to connect their Google Calendar. "
+            "Call this when the contractor asks to connect or sync their calendar."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+    },
+    {
         "name": "get_availability",
         "description": "Return free calendar slots between two dates.",
         "input_schema": {
