@@ -73,6 +73,23 @@ variable "openai_api_key" {
   sensitive   = true
 }
 
+variable "google_client_id" {
+  description = "Google OAuth2 client ID for Calendar integration"
+  type        = string
+  sensitive   = true
+}
+
+variable "google_client_secret" {
+  description = "Google OAuth2 client secret for Calendar integration"
+  type        = string
+  sensitive   = true
+}
+
+variable "google_redirect_uri" {
+  description = "Google OAuth2 redirect URI for Calendar integration"
+  type        = string
+}
+
 # --- Optional: load balancer ---
 
 variable "enable_lb" {
