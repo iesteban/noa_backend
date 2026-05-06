@@ -2,7 +2,11 @@ import os
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-_ENV_FILE = ".env.production" if os.getenv("ENVIRONMENT") == "production" else ".env"
+# In production (container), settings come from real env vars — no .env file present.
+# Locally, load from .env (or .env.production if ENVIRONMENT=production).
+_ENV_FILE = None if os.getenv("ENVIRONMENT") == "production" else (
+    ".env.production" if os.getenv("ENVIRONMENT") == "staging" else ".env"
+)
 
 
 class Settings(BaseSettings):
