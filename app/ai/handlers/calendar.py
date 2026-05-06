@@ -103,11 +103,11 @@ async def handle_connect_google_calendar(
 
     state = str(uuid.uuid4())
 
-    # Remove any existing pending token for this contractor+provider.
+    # Remove any existing token (pending or active) so the INSERT doesn't conflict.
     await db.execute(
         delete(CalendarToken).where(
             CalendarToken.contractor_id == session.contractor_id,
-            CalendarToken.access_token.is_(None),
+            CalendarToken.provider == CalendarProviderEnum.google,
         )
     )
 
@@ -148,6 +148,13 @@ async def handle_get_availability(
     token = await _get_token(db, session.contractor_id)
     if token is None:
         state = str(uuid.uuid4())
+        await db.execute(
+            delete(CalendarToken).where(
+                CalendarToken.contractor_id == session.contractor_id,
+                CalendarToken.provider == CalendarProviderEnum.google,
+                CalendarToken.access_token.is_(None),
+            )
+        )
         pending = CalendarToken(
             contractor_id=session.contractor_id,
             provider=CalendarProviderEnum.google,

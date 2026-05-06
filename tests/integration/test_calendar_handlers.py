@@ -88,9 +88,23 @@ class TestConnectGoogleCalendar:
         rows = await db.execute(
             select(CalendarToken).where(CalendarToken.contractor_id == contractor.id)
         )
-        # Only one pending token should remain.
         tokens = rows.scalars().all()
         assert len(tokens) == 1
+
+    async def test_replaces_existing_active_token(self, db: AsyncSession) -> None:
+        contractor = await make_contractor(db)
+        session = await make_session(db, contractor)
+        await _make_token(db, contractor.id, connected=True)
+
+        result = await handle_connect_google_calendar({}, db, session)
+
+        rows = await db.execute(
+            select(CalendarToken).where(CalendarToken.contractor_id == contractor.id)
+        )
+        tokens = rows.scalars().all()
+        assert len(tokens) == 1
+        assert tokens[0].access_token is None
+        assert "/auth/google/connect?state=" in result
 
 
 # ---------------------------------------------------------------------------

@@ -32,7 +32,7 @@ class GoogleCalendarProvider:
     def _build_credentials(self) -> Any:
         from google.oauth2.credentials import Credentials
 
-        return Credentials(  # type: ignore[no-untyped-call]
+        return Credentials(
             token=self._token.access_token,
             refresh_token=self._token.refresh_token,
             token_uri="https://oauth2.googleapis.com/token",
