@@ -1,43 +1,12 @@
 from __future__ import annotations
 
 import logging
-import re
 
+from app.messaging.contacts import format_contact_text, parse_vcard_phones
 from app.messaging.types import InboundMessage, MessageType
 from app.schemas.telegram import TelegramUpdate
 
 logger = logging.getLogger(__name__)
-
-_VCARD_TYPE_LABELS: dict[str, str] = {
-    "cell": "móvil",
-    "mobile": "móvil",
-    "work": "trabajo",
-    "home": "casa",
-    "main": "principal",
-}
-
-
-def _parse_vcard_phones(vcard: str) -> list[tuple[str, str]]:
-    """Return (number, label) pairs from vCard TEL entries."""
-    results = []
-    for line in vcard.splitlines():
-        if not line.upper().startswith("TEL"):
-            continue
-        # TEL;TYPE=CELL:+34600123456  or  TEL:+34600123456
-        colon = line.find(":")
-        if colon == -1:
-            continue
-        number = re.sub(r"[\s\-\(\)]", "", line[colon + 1:]).strip()
-        if not number:
-            continue
-        type_match = re.search(r"TYPE=([^;:]+)", line, re.IGNORECASE)
-        raw_types = type_match.group(1).lower().split(",") if type_match else []
-        label = next(
-            (_VCARD_TYPE_LABELS[t] for t in raw_types if t in _VCARD_TYPE_LABELS),
-            "teléfono",
-        )
-        results.append((number, label))
-    return results
 
 
 def parse_update(update: TelegramUpdate) -> InboundMessage | None:
@@ -95,18 +64,11 @@ def parse_update(update: TelegramUpdate) -> InboundMessage | None:
 
         phones: list[tuple[str, str]] = []
         if contact.vcard:
-            phones = _parse_vcard_phones(contact.vcard)
+            phones = parse_vcard_phones(contact.vcard)
         if not phones:
             phones = [(contact.phone_number, "teléfono")]
 
-        if len(phones) == 1:
-            number, label = phones[0]
-            text = f"[Contacto compartido]\nNombre: {name}\nTeléfono: {number}"
-        else:
-            lines = [f"[Contacto compartido]\nNombre: {name}\nTeléfonos disponibles:"]
-            for i, (number, label) in enumerate(phones, 1):
-                lines.append(f"  {i}. {number} ({label})")
-            text = "\n".join(lines)
+        text = format_contact_text(name, phones)
 
         return InboundMessage(
             update_id=update.update_id,
