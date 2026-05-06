@@ -28,6 +28,11 @@ output "bucket_name" {
   value       = scaleway_object_bucket.app.name
 }
 
+output "image_tag" {
+  description = "Currently deployed image tag"
+  value       = var.image_tag
+}
+
 output "database_url" {
   description = "Full asyncpg connection string for the API"
   value       = local.database_url
