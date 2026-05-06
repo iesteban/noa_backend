@@ -44,6 +44,7 @@ class TelegramContact(BaseModel):
     first_name: str
     last_name: str | None = None
     user_id: int | None = None
+    vcard: str | None = None
 
 
 class TelegramMessage(BaseModel):

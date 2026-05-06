@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 
+from app.messaging.contacts import format_contact_text, parse_vcard_phones
 from app.messaging.types import InboundMessage, MessageType
 from app.schemas.telegram import TelegramUpdate
 
@@ -58,12 +59,23 @@ def parse_update(update: TelegramUpdate) -> InboundMessage | None:
         )
 
     if message.contact is not None:
+        contact = message.contact
+        name = " ".join(p for p in [contact.first_name, contact.last_name] if p)
+
+        phones: list[tuple[str, str]] = []
+        if contact.vcard:
+            phones = parse_vcard_phones(contact.vcard)
+        if not phones:
+            phones = [(contact.phone_number, "teléfono")]
+
+        text = format_contact_text(name, phones)
+
         return InboundMessage(
             update_id=update.update_id,
             chat_id=chat_id,
-            phone_number=message.contact.phone_number,
+            phone_number=contact.phone_number,
             message_type=MessageType.contact,
-            text=None,
+            text=text,
             file_id=None,
         )
 

@@ -139,6 +139,67 @@ class TestParseContactMessage:
         assert result is not None
         assert result.file_id is None
 
+    def test_text_includes_name_and_phone(self) -> None:
+        contact = TelegramContact(phone_number="+34600000001", first_name="Ana", last_name="García")
+        result = parse_update(_update(_msg(contact=contact)))
+        assert result is not None
+        assert "Ana García" in (result.text or "")
+        assert "+34600000001" in (result.text or "")
+
+    def test_first_name_only(self) -> None:
+        contact = TelegramContact(phone_number="+34600000001", first_name="Pedro")
+        result = parse_update(_update(_msg(contact=contact)))
+        assert result is not None
+        assert "Pedro" in (result.text or "")
+        assert "Pedro None" not in (result.text or "")
+
+    def test_vcard_single_phone(self) -> None:
+        vcard = (
+            "BEGIN:VCARD\nVERSION:3.0\nFN:Luis Martín\n"
+            "TEL;TYPE=CELL:+34611000001\nEND:VCARD"
+        )
+        contact = TelegramContact(
+            phone_number="+34611000001", first_name="Luis", last_name="Martín", vcard=vcard
+        )
+        result = parse_update(_update(_msg(contact=contact)))
+        assert result is not None
+        assert "+34611000001" in (result.text or "")
+        assert "Luis Martín" in (result.text or "")
+        # Single phone — no disambiguation prompt
+        assert "Teléfonos disponibles" not in (result.text or "")
+
+    def test_vcard_multiple_phones_lists_all(self) -> None:
+        vcard = (
+            "BEGIN:VCARD\nVERSION:3.0\nFN:María Ruiz\n"
+            "TEL;TYPE=CELL:+34622000001\n"
+            "TEL;TYPE=WORK:+34934000001\n"
+            "END:VCARD"
+        )
+        contact = TelegramContact(
+            phone_number="+34622000001", first_name="María", last_name="Ruiz", vcard=vcard
+        )
+        result = parse_update(_update(_msg(contact=contact)))
+        assert result is not None
+        assert "Teléfonos disponibles" in (result.text or "")
+        assert "+34622000001" in (result.text or "")
+        assert "+34934000001" in (result.text or "")
+
+    def test_vcard_phone_labels(self) -> None:
+        vcard = (
+            "BEGIN:VCARD\nVERSION:3.0\nFN:Carlos\n"
+            "TEL;TYPE=CELL:+34600000001\n"
+            "TEL;TYPE=WORK:+34910000001\n"
+            "TEL;TYPE=HOME:+34910000002\n"
+            "END:VCARD"
+        )
+        contact = TelegramContact(phone_number="+34600000001", first_name="Carlos", vcard=vcard)
+        result = parse_update(_update(_msg(contact=contact)))
+        assert result is not None
+        text = result.text or ""
+        assert "móvil" in text
+        assert "trabajo" in text
+        assert "casa" in text
+
 
 class TestParseUnhandledTypes:
     def test_unknown_type_returns_inbound(self) -> None:
