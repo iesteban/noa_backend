@@ -7,6 +7,40 @@ from typing import Any
 
 _CONTRACTOR_TOOL_LIST: list[dict[str, Any]] = [
     {
+        "name": "register_client",
+        "description": (
+            "Save a new client for the contractor. "
+            "Always show the extracted details (name, phone) and get confirmation before calling. "
+            "Returns a warning if a client with the same name already exists — ask the contractor "
+            "whether to proceed, then call again with force=true if they confirm."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string", "description": "Full name of the client."},
+                "phone_number": {
+                    "type": "string",
+                    "description": "Phone number, digits only (e.g. 600123456).",
+                },
+                "nif": {
+                    "type": "string",
+                    "description": "NIF/CIF of the client. Optional.",
+                },
+                "notes": {
+                    "type": "string",
+                    "description": "Free-text notes about the client. Optional.",
+                },
+                "force": {
+                    "type": "boolean",
+                    "description": (
+                        "Set to true to save even when a duplicate name warning was returned."
+                    ),
+                },
+            },
+            "required": ["name", "phone_number"],
+        },
+    },
+    {
         "name": "search_client",
         "description": (
             "Search the contractor's clients by name. "
