@@ -58,11 +58,10 @@ resource "scaleway_rdb_acl" "main" {
       description = "Developer local machine"
     }
   }
-  dynamic "acl_rules" {
-    for_each = var.environment == "staging" ? [1] : []
-    content {
-      ip          = "0.0.0.0/0"
-      description = "Serverless containers (no fixed egress IP in staging)"
-    }
+  # Serverless containers have no fixed egress IP, so allow all public IPs.
+  # The DB is still protected by password auth + TLS.
+  acl_rules {
+    ip          = "0.0.0.0/0"
+    description = "Serverless containers (no fixed egress IP)"
   }
 }
