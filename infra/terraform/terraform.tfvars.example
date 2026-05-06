@@ -16,6 +16,10 @@ anthropic_api_key       = "sk-ant-..."
 telegram_bot_token      = "123456:ABC..."
 telegram_webhook_secret = "CHANGE_ME"
 openai_api_key          = "sk-..."
+google_client_id        = "CHANGE_ME"
+google_client_secret    = "CHANGE_ME"
+google_redirect_uri     = "https://api.noa.app/calendar/oauth/callback"
+dev_machine_ip          = "CHANGE_ME"   # your external IP — run: curl https://api.ipify.org
 
 # Set to false in dev to save ~€15/month (no static IP or custom domain needed)
 enable_lb = true

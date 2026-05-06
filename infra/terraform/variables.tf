@@ -98,6 +98,14 @@ variable "enable_lb" {
   default     = true
 }
 
+# --- Database ACL ---
+
+variable "dev_machine_ip" {
+  description = "IP address of the developer machine allowed to connect to the DB directly (for running migrations)"
+  type        = string
+  default     = ""
+}
+
 # --- Optional: custom domain ---
 
 variable "api_domain" {

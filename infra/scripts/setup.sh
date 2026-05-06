@@ -23,7 +23,7 @@ if [[ ! -f "$TFVARS" ]]; then
   exit 1
 fi
 
-STATE_BUCKET="noa-terraform-state"
+STATE_BUCKET="noa-tf-state"
 REGION="fr-par"
 
 echo "==> Creating Terraform state bucket (idempotent)..."
@@ -34,9 +34,15 @@ scw object bucket create \
 echo "==> Initialising Terraform..."
 cd "$TERRAFORM_DIR"
 
+BACKEND_CONFIG_ARGS=()
+if [[ -f "$TERRAFORM_DIR/$ENVIRONMENT.tfbackend" ]]; then
+  BACKEND_CONFIG_ARGS+=("-backend-config=$TERRAFORM_DIR/$ENVIRONMENT.tfbackend")
+fi
+
 AWS_ACCESS_KEY_ID="${SCW_ACCESS_KEY:-$(scw config get access-key)}" \
 AWS_SECRET_ACCESS_KEY="${SCW_SECRET_KEY:-$(scw config get secret-key)}" \
-terraform init \
+terraform init -reconfigure \
+  "${BACKEND_CONFIG_ARGS[@]}" \
   -backend-config="access_key=${SCW_ACCESS_KEY:-$(scw config get access-key)}" \
   -backend-config="secret_key=${SCW_SECRET_KEY:-$(scw config get secret-key)}"
 

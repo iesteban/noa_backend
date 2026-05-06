@@ -177,6 +177,53 @@ All calendar operations go through the `CalendarProvider` protocol (`app/calenda
 
 ---
 
+## Infrastructure
+
+Terraform on Scaleway (`fr-par`). Full docs: `infra/README.md`.
+
+**Environments:** `staging` (no LB, ~€16/month) and `production` (LB enabled, ~€31/month).  
+**State bucket:** `noa-tf-state` in Scaleway Object Storage.  
+**Credentials:** `SCW_ACCESS_KEY` + `SCW_SECRET_KEY` — source `.env.production` or `.env.staging`.
+
+### Scripts
+
+| Script | Purpose | When to use |
+|---|---|---|
+| `infra/scripts/setup.sh <env>` | First-time bootstrap: creates state bucket, runs `terraform init` | First deploy to an environment, or switching between environments |
+| `infra/scripts/infra.sh <env>` | `terraform apply` all resources | Terraform config changed |
+| `infra/scripts/deploy.sh <env> [sha]` | Build + push image, update container only | Code-only deploy (no infra changes) |
+| `infra/scripts/migrate.sh <env>` | Run Alembic migrations against the deployed DB | After every deploy that includes migrations |
+
+### Common operations
+
+```bash
+# Source credentials first
+source .env.production   # or .env.staging
+
+# First-time provision
+./infra/scripts/setup.sh production
+cd infra/terraform && AWS_ACCESS_KEY_ID=$SCW_ACCESS_KEY AWS_SECRET_ACCESS_KEY=$SCW_SECRET_KEY terraform plan -var-file=terraform.tfvars.production
+./infra/scripts/infra.sh production
+./infra/scripts/migrate.sh production
+
+# Deploy new code
+./infra/scripts/deploy.sh production
+./infra/scripts/migrate.sh production   # only if migrations changed
+
+# Apply Terraform changes
+./infra/scripts/infra.sh production
+
+# Switch between environments (reinitialises Terraform backend)
+./infra/scripts/setup.sh staging
+./infra/scripts/setup.sh production
+```
+
+### Tfvars files
+
+`infra/terraform/terraform.tfvars.<env>` — gitignored, never commit. Copy from `terraform.tfvars.example` and fill in secrets. The `.env.<env>` file is the source of truth for secret values; tfvars are derived from it.
+
+---
+
 ## Key references
 
 `noa_knowledge` must be checked out as a sibling directory (`../noa_knowledge`).

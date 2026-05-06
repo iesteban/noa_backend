@@ -51,9 +51,12 @@ resource "scaleway_rdb_acl" "main" {
       description = "Load balancer egress"
     }
   }
-  acl_rules {
-    ip          = "66.81.172.176/32"
-    description = "Developer local machine"
+  dynamic "acl_rules" {
+    for_each = var.dev_machine_ip != "" ? [var.dev_machine_ip] : []
+    content {
+      ip          = "${acl_rules.value}/32"
+      description = "Developer local machine"
+    }
   }
   dynamic "acl_rules" {
     for_each = var.environment == "staging" ? [1] : []

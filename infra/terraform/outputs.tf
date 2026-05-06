@@ -15,12 +15,12 @@ output "registry_endpoint" {
 
 output "db_host" {
   description = "PostgreSQL host"
-  value       = scaleway_rdb_instance.main.endpoint_ip
+  value       = scaleway_rdb_instance.main.load_balancer[0].ip
 }
 
 output "db_port" {
   description = "PostgreSQL port"
-  value       = scaleway_rdb_instance.main.endpoint_port
+  value       = scaleway_rdb_instance.main.load_balancer[0].port
 }
 
 output "bucket_name" {

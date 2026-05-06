@@ -2,7 +2,8 @@ locals {
   image = "${scaleway_registry_namespace.main.endpoint}/noa-api:${var.image_tag}"
 
   # asyncpg connection string built from RDB outputs.
-  database_url = "postgresql+asyncpg://${var.db_user}:${var.db_password}@${scaleway_rdb_instance.main.endpoint_ip}:${scaleway_rdb_instance.main.endpoint_port}/${var.db_name}"
+  # urlencode() the password so special characters (@, &, etc.) don't break URL parsing.
+  database_url = "postgresql+asyncpg://${var.db_user}:${urlencode(var.db_password)}@${scaleway_rdb_instance.main.load_balancer[0].ip}:${scaleway_rdb_instance.main.load_balancer[0].port}/${var.db_name}"
 }
 
 resource "scaleway_container_namespace" "main" {
