@@ -3,11 +3,12 @@ import logging
 from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Request
 
 from app.ai.claude import call_claude
+from app.ai.whisper import transcribe
 from app.config import settings
 from app.database import async_session_factory
 from app.messaging.parser import parse_update
 from app.messaging.telegram_sender import send_message
-from app.messaging.types import InboundMessage, MessageSender
+from app.messaging.types import InboundMessage, MessageSender, MessageType
 from app.models.session import MessageRole
 from app.schemas.telegram import TelegramUpdate
 from app.services.onboarding import handle_onboarding_message
@@ -48,14 +49,24 @@ async def _dispatch(inbound: InboundMessage, send: MessageSender, channel: str) 
             channel=channel,
             routing=routing,
         )
-        await append_message(
-            db,
-            session.id,
-            MessageRole.user,
-            inbound.text or "",
-        )
 
-        reply = await call_claude(db, session, inbound.text or "")
+        text = inbound.text or ""
+        media_url: str | None = None
+
+        if inbound.message_type == MessageType.voice and inbound.file_id:
+            try:
+                text, media_url = await transcribe(inbound.file_id)
+            except Exception:
+                logger.exception("Whisper transcription failed for file_id %s", inbound.file_id)
+                await send(
+                    inbound.chat_id,
+                    "No he podido transcribir el audio. ¿Puedes escribirlo?",
+                )
+                return
+
+        await append_message(db, session.id, MessageRole.user, text, media_url=media_url)
+
+        reply = await call_claude(db, session, text)
 
         await append_message(db, session.id, MessageRole.assistant, reply)
         await send(inbound.chat_id, reply)
