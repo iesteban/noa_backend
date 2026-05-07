@@ -90,6 +90,13 @@ variable "google_redirect_uri" {
   type        = string
 }
 
+variable "sentry_dsn" {
+  description = "Sentry DSN for error tracking (leave empty to disable)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
 # --- Optional: load balancer ---
 
 variable "enable_lb" {
