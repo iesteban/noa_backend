@@ -32,6 +32,7 @@ jobs:
       OPENAI_API_KEY: dummy
       SCW_ACCESS_KEY: dummy
       SCW_SECRET_KEY: dummy
+      SENTRY_DSN: ""
 
     steps:
       - uses: actions/checkout@v4
@@ -124,6 +125,7 @@ jobs:
           TF_VAR_google_client_id: ${{ secrets.STAGING_GOOGLE_CLIENT_ID }}
           TF_VAR_google_client_secret: ${{ secrets.STAGING_GOOGLE_CLIENT_SECRET }}
           TF_VAR_google_redirect_uri: ${{ secrets.STAGING_GOOGLE_REDIRECT_URI }}
+          TF_VAR_sentry_dsn: ${{ secrets.STAGING_SENTRY_DSN }}
         run: |
           terraform apply -auto-approve \
             -target=scaleway_container.api \

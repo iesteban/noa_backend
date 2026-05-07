@@ -49,6 +49,7 @@ resource "scaleway_container" "api" {
     GOOGLE_CLIENT_ID        = var.google_client_id
     GOOGLE_CLIENT_SECRET    = var.google_client_secret
     GOOGLE_REDIRECT_URI     = var.google_redirect_uri
+    SENTRY_DSN              = var.sentry_dsn
   }
 
   depends_on = [
