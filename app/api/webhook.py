@@ -1,5 +1,6 @@
 import logging
 
+import sentry_sdk
 from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Request
 
 from app.ai.claude import call_claude
@@ -56,7 +57,8 @@ async def _dispatch(inbound: InboundMessage, send: MessageSender, channel: str) 
         if inbound.message_type == MessageType.voice and inbound.file_id:
             try:
                 text, media_url = await transcribe(inbound.file_id)
-            except Exception:
+            except Exception as exc:
+                sentry_sdk.capture_exception(exc)
                 logger.exception("Whisper transcription failed for file_id %s", inbound.file_id)
                 await send(
                     inbound.chat_id,

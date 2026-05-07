@@ -4,6 +4,7 @@ import logging
 from collections.abc import Callable, Coroutine
 from typing import Any
 
+import sentry_sdk
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.session import ConversationSession
@@ -42,6 +43,7 @@ async def dispatch_tool(
         return f"Tool '{tool_name}' is not yet implemented."
     try:
         return await handler(tool_input, db, session)
-    except Exception:
+    except Exception as exc:
+        sentry_sdk.capture_exception(exc)
         logger.exception("Tool %r raised an exception", tool_name)
         return f"Tool '{tool_name}' encountered an error. Please try again."
