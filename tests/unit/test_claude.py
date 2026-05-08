@@ -72,12 +72,13 @@ def _tool_response(name: str, input_: dict, tool_id: str = "tu_abc") -> MagicMoc
 def _db(contractor: MagicMock) -> AsyncMock:
     db = AsyncMock()
     db.get = AsyncMock(return_value=contractor)
-    # get_recent_messages queries db.execute
-    msg_result = MagicMock()
-    msg_result.scalars.return_value.all.return_value = []
-    # context builder also calls db.execute
+    # get_recent_clients: scalar() returns total count, execute() returns clients
+    db.scalar.return_value = 0
     client_result = MagicMock()
     client_result.scalars.return_value.all.return_value = []
+    # get_recent_messages: execute() returns messages
+    msg_result = MagicMock()
+    msg_result.scalars.return_value.all.return_value = []
     db.execute.side_effect = [client_result, msg_result]
     return db
 
@@ -143,7 +144,7 @@ class TestToolLoop:
         cont = _contractor()
         db = AsyncMock()
         db.get = AsyncMock(return_value=cont)
-        # Two db.execute calls: context builder + get_recent_messages
+        db.scalar.return_value = 0
         client_result = MagicMock()
         client_result.scalars.return_value.all.return_value = []
         msg_result = MagicMock()
@@ -172,6 +173,7 @@ class TestToolLoop:
         cont = _contractor()
         db = AsyncMock()
         db.get = AsyncMock(return_value=cont)
+        db.scalar.return_value = 0
         client_result = MagicMock()
         client_result.scalars.return_value.all.return_value = []
         msg_result = MagicMock()
@@ -203,6 +205,7 @@ class TestToolLoop:
         cont = _contractor()
         db = AsyncMock()
         db.get = AsyncMock(return_value=cont)
+        db.scalar.return_value = 0
         client_result = MagicMock()
         client_result.scalars.return_value.all.return_value = []
         msg_result = MagicMock()

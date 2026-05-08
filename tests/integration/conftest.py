@@ -8,7 +8,7 @@ downgrade base so the test DB is always left clean.
 from __future__ import annotations
 
 import asyncio
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 import pytest
 from alembic.config import Config
@@ -22,7 +22,7 @@ from app.database import Base
 from app.models.appointment import Appointment, CalendarToken  # noqa: F401
 from app.models.client import Client
 from app.models.contractor import Channel, Contractor
-from app.models.job import Job  # noqa: F401 — registers table with Base.metadata
+from app.models.job import Job
 from app.models.session import ConversationSession, Message, MessageRole, UserType
 
 
@@ -117,6 +117,30 @@ async def make_client(
     db.add(client)
     await db.flush()
     return client
+
+
+async def make_job(
+    db: AsyncSession,
+    contractor: Contractor,
+    client: Client,
+    *,
+    job_date: date | None = None,
+    **overrides: object,
+) -> Job:
+    """Insert a Job for contractor+client and flush."""
+    from datetime import date as _date
+    defaults: dict[str, object] = {
+        "contractor_id": contractor.id,
+        "client_id": client.id,
+        "description": "Trabajo de prueba",
+        "date": job_date or _date.today(),
+        "amount": 100,
+    }
+    defaults.update(overrides)
+    job = Job(**defaults)  # type: ignore[arg-type]
+    db.add(job)
+    await db.flush()
+    return job
 
 
 async def make_session(
