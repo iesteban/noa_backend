@@ -67,12 +67,6 @@ variable "telegram_webhook_secret" {
   sensitive   = true
 }
 
-variable "telegram_bot_username" {
-  description = "Telegram bot username (without @) — shown on the Google OAuth success page"
-  type        = string
-  default     = ""
-}
-
 variable "openai_api_key" {
   description = "OpenAI API key for Whisper"
   type        = string
