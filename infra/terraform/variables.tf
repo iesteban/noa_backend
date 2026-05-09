@@ -103,11 +103,13 @@ variable "cloudflare_api_token" {
   description = "Cloudflare API token — Zone:DNS:Edit permission for botnoa.com"
   type        = string
   sensitive   = true
+  default     = ""
 }
 
 variable "cloudflare_zone_id" {
   description = "Cloudflare Zone ID for botnoa.com (Cloudflare dashboard → right sidebar)"
   type        = string
+  default     = ""
 }
 
 variable "enable_lb" {
