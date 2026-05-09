@@ -66,7 +66,7 @@ async def _dispatch(inbound: InboundMessage, send: MessageSender, channel: str) 
                 else:
                     text, media_url = await transcribe_from_url(
                         inbound.file_id,
-                        auth=(settings.twilio_account_sid, settings.twilio_auth_token),
+                        auth=(settings.twilio_api_key, settings.twilio_api_secret),
                     )
             except Exception as exc:
                 sentry_sdk.capture_exception(exc)
@@ -122,7 +122,7 @@ async def _validate_twilio_signature(
 ) -> None:
     if not x_twilio_signature:
         raise HTTPException(status_code=403, detail="Missing Twilio signature")
-    validator = RequestValidator(settings.twilio_auth_token)
+    validator = RequestValidator(settings.twilio_api_secret)
     form = dict(await request.form())
     if not validator.validate(str(request.url), form, x_twilio_signature):
         raise HTTPException(status_code=403, detail="Invalid Twilio signature")

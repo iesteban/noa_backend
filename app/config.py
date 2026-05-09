@@ -29,7 +29,8 @@ class Settings(BaseSettings):
     sentry_dsn: str = ""
     feature_hybrid_client_roster: bool = True
     twilio_account_sid: str = ""
-    twilio_auth_token: str = ""
+    twilio_api_key: str = ""     # Key SID, e.g. "SKxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    twilio_api_secret: str = ""  # Key secret — used for REST auth and webhook validation
     twilio_whatsapp_from: str = ""  # E.164, e.g. "+14155238886"
 
 
