@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     feature_hybrid_client_roster: bool = True
     twilio_account_sid: str = ""
     twilio_api_key: str = ""     # Key SID, e.g. "SKxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-    twilio_api_secret: str = ""  # Key secret — used for REST auth and webhook validation
+    twilio_client_secret: str = ""  # Client Secret shown once at API key creation
     twilio_whatsapp_from: str = ""  # E.164, e.g. "+14155238886"
 
 
