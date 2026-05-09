@@ -222,6 +222,17 @@ cd infra/terraform && AWS_ACCESS_KEY_ID=$SCW_ACCESS_KEY AWS_SECRET_ACCESS_KEY=$S
 
 `infra/terraform/terraform.tfvars.<env>` — gitignored, never commit. Copy from `terraform.tfvars.example` and fill in secrets. The `.env.<env>` file is the source of truth for secret values; tfvars are derived from it.
 
+### GitHub secrets
+
+When a new secret is added to `.env.staging` / `.env.production`, add the corresponding GitHub Actions secrets immediately — do not ask the user to do it. Use:
+
+```bash
+gh secret set STAGING_<VAR> --body "<value>" -R iesteban/noa_backend
+gh secret set PRODUCTION_<VAR> --body "<value>" -R iesteban/noa_backend
+```
+
+Read values from `.env.staging` and `.env.production`. Secret names follow the pattern `STAGING_<VAR>` / `PRODUCTION_<VAR>` to match the convention already used in the workflows.
+
 ---
 
 ## Key references
