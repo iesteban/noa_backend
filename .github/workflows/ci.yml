@@ -85,6 +85,7 @@ jobs:
           cat > infra/terraform/terraform.tfvars.staging <<'EOF'
           environment = "staging"
           enable_lb   = false
+          api_domain  = "api-staging.botnoa.com"
           EOF
 
       - name: Get registry endpoint
@@ -130,9 +131,13 @@ jobs:
           TF_VAR_twilio_api_key_sid: ${{ secrets.STAGING_TWILIO_API_KEY_SID }}
           TF_VAR_twilio_client_secret: ${{ secrets.STAGING_TWILIO_CLIENT_SECRET }}
           TF_VAR_twilio_whatsapp_from: ${{ secrets.STAGING_TWILIO_WHATSAPP_FROM }}
+          TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
         run: |
           terraform apply -auto-approve \
             -target=scaleway_container.api \
+            -target=scaleway_container_domain.api \
+            -target=cloudflare_record.api \
             -var-file=terraform.tfvars.staging \
             -var "image_tag=${{ github.sha }}"
 

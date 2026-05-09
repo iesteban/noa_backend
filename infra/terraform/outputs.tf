@@ -44,6 +44,11 @@ output "landing_url" {
   value       = "https://botnoa.com"
 }
 
+output "api_url" {
+  description = "API base URL (custom domain if set, otherwise Scaleway container URL)"
+  value       = var.api_domain != "" ? "https://${var.api_domain}" : "https://${scaleway_container.api.domain_name}"
+}
+
 output "edge_services_fqdn" {
   description = "Scaleway Edge Services hostname (CNAME target for botnoa.com)"
   value       = scaleway_edge_services_dns_stage.landing.default_fqdn
