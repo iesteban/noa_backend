@@ -88,6 +88,16 @@ jobs:
             -var-file=terraform.tfvars.production \
             -var "image_tag=${{ steps.sha.outputs.value }}"
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run migrations (production)
+        run: |
+          pip install -e . -q
+          export DATABASE_URL=$(cd infra/terraform && terraform output -raw database_url)
+          alembic upgrade head
+
       - name: Check for landing page changes
         id: landing
         run: |

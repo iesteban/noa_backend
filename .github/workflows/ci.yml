@@ -131,3 +131,13 @@ jobs:
             -target=scaleway_container.api \
             -var-file=terraform.tfvars.staging \
             -var "image_tag=${{ github.sha }}"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run migrations (staging)
+        run: |
+          pip install -e . -q
+          export DATABASE_URL=$(cd infra/terraform && terraform output -raw database_url)
+          alembic upgrade head
