@@ -5,17 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Noa — Tu asistente para autónomos</title>
   <meta name="description" content="Noa gestiona tus facturas, citas y clientes por WhatsApp y Telegram. Sin apps, sin complicaciones." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@1,300;1,400&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --brand:   #2563eb;
-      --brand-d: #1d4ed8;
-      --text:    #111827;
-      --muted:   #6b7280;
-      --bg:      #f9fafb;
-      --white:   #ffffff;
-      --radius:  12px;
+      --brand:        #2563eb;
+      --brand-d:      #1d4ed8;
+      --brand-subtle: #dbeafe;
+      --brand-bg:     #eff6ff;
+      --text:         #111827;
+      --muted:        #6b7280;
+      --bg:           #f9fafb;
+      --white:        #ffffff;
+      --border:       #e5e7eb;
+      --radius:       12px;
+      --wa-green:     #25d366;
+      --wa-header:    #202c33;
+      --wa-out:       #d9fdd3;
+      --wa-time:      #8696a0;
     }
 
     html { scroll-behavior: smooth; }
@@ -31,284 +40,627 @@
     nav {
       position: sticky;
       top: 0;
-      z-index: 10;
+      z-index: 100;
       background: rgba(255,255,255,0.92);
-      backdrop-filter: blur(8px);
-      border-bottom: 1px solid #e5e7eb;
-      padding: 0 1.5rem;
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
       height: 60px;
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
 
-    .logo {
-      font-weight: 700;
-      font-size: 1.25rem;
-      color: var(--brand);
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
       text-decoration: none;
-      letter-spacing: -0.02em;
     }
 
-    nav a.cta-nav {
+    .nav-logo-icon {
+      width: 36px;
+      height: 36px;
       background: var(--brand);
-      color: var(--white);
-      padding: 0.4rem 1rem;
-      border-radius: 8px;
-      text-decoration: none;
-      font-size: 0.875rem;
-      font-weight: 600;
-      transition: background 0.15s;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
     }
-    nav a.cta-nav:hover { background: var(--brand-d); }
+
+    .nav-logo-icon svg { width: 22px; height: 22px; }
+
+    .nav-wordmark {
+      font-family: 'Fraunces', serif;
+      font-weight: 300;
+      font-style: italic;
+      font-size: 22px;
+      color: var(--text);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+    }
+
+    .nav-links a {
+      font-size: 14px;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color .15s;
+    }
+    .nav-links a:hover { color: var(--text); }
+
+    .nav-cta {
+      background: var(--brand);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 18px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      box-shadow: 0 4px 14px rgba(37,99,235,0.3);
+      transition: background .15s;
+    }
+    .nav-cta:hover { background: var(--brand-d); }
 
     /* ── Hero ── */
     .hero {
-      padding: 6rem 1.5rem 5rem;
+      background: var(--brand-bg);
+      padding: 6rem 2rem 5rem;
       text-align: center;
-      background: linear-gradient(160deg, #eff6ff 0%, var(--white) 60%);
     }
 
     .hero-badge {
-      display: inline-block;
-      background: #dbeafe;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--brand-subtle);
       color: var(--brand);
-      font-size: 0.8rem;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      padding: 0.3rem 0.8rem;
+      font-size: 13px;
+      font-weight: 500;
       border-radius: 999px;
+      padding: 5px 14px;
       margin-bottom: 1.5rem;
     }
 
-    .hero h1 {
-      font-size: clamp(2rem, 5vw, 3.25rem);
-      font-weight: 800;
-      letter-spacing: -0.03em;
+    .hero-badge-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--brand);
+      border-radius: 50%;
+    }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.4rem);
+      font-weight: 600;
       line-height: 1.15;
+      letter-spacing: -0.03em;
+      color: var(--text);
       max-width: 720px;
       margin: 0 auto 1.25rem;
     }
 
-    .hero h1 span { color: var(--brand); }
+    h1 em {
+      font-family: 'Fraunces', serif;
+      font-weight: 300;
+      font-style: italic;
+      color: var(--brand);
+    }
 
-    .hero p {
-      font-size: clamp(1rem, 2vw, 1.2rem);
+    .hero-sub {
+      font-size: 1.1rem;
       color: var(--muted);
       max-width: 520px;
       margin: 0 auto 2.5rem;
+      line-height: 1.7;
     }
 
-    .hero-cta {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      background: var(--brand);
-      color: var(--white);
-      padding: 0.85rem 2rem;
-      border-radius: 10px;
-      text-decoration: none;
-      font-weight: 700;
-      font-size: 1.05rem;
-      transition: background 0.15s, transform 0.1s;
-      box-shadow: 0 4px 14px rgba(37,99,235,0.3);
-    }
-    .hero-cta:hover { background: var(--brand-d); transform: translateY(-1px); }
-
-    .hero-sub {
-      margin-top: 1rem;
-      font-size: 0.85rem;
-      color: var(--muted);
-    }
-
-    /* ── Channels ── */
-    .channels {
+    .hero-actions {
       display: flex;
+      align-items: center;
       justify-content: center;
       gap: 1rem;
-      margin-top: 2.5rem;
       flex-wrap: wrap;
+      margin-bottom: 4rem;
     }
 
-    .channel-pill {
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      border: 1.5px solid #e5e7eb;
-      border-radius: 999px;
-      padding: 0.4rem 1rem;
-      font-size: 0.875rem;
-      color: var(--muted);
+    .btn-primary {
+      background: var(--brand);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 13px 28px;
+      font-size: 15px;
       font-weight: 500;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(37,99,235,0.35);
+      text-decoration: none;
+      display: inline-block;
+      transition: background .15s, transform .1s;
     }
+    .btn-primary:hover { background: var(--brand-d); transform: translateY(-1px); }
 
-    .channel-pill svg { width: 18px; height: 18px; flex-shrink: 0; }
-
-    /* ── Features ── */
-    .features {
-      padding: 5rem 1.5rem;
-      background: var(--bg);
+    .btn-secondary {
+      background: white;
+      color: var(--text);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 24px;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      transition: border-color .15s;
     }
+    .btn-secondary:hover { border-color: #9ca3af; }
 
-    .section-label {
-      text-align: center;
-      font-size: 0.8rem;
-      font-weight: 600;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--brand);
-      margin-bottom: 0.75rem;
-    }
-
-    .section-title {
-      text-align: center;
-      font-size: clamp(1.5rem, 3vw, 2.25rem);
-      font-weight: 800;
-      letter-spacing: -0.025em;
-      margin-bottom: 0.75rem;
-    }
-
-    .section-sub {
-      text-align: center;
-      color: var(--muted);
-      max-width: 480px;
-      margin: 0 auto 3rem;
-    }
-
-    .grid {
+    /* ── WhatsApp chats grid ── */
+    .chats-row {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 1.5rem;
-      max-width: 960px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.25rem;
+      max-width: 1060px;
       margin: 0 auto;
     }
 
-    .card {
-      background: var(--white);
-      border: 1px solid #e5e7eb;
-      border-radius: var(--radius);
-      padding: 1.75rem;
+    .chat-col {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
 
-    .card-icon {
-      width: 44px;
-      height: 44px;
+    .chat-label {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--brand);
+      text-align: center;
+    }
+
+    .wa-wrap {
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.14), 0 3px 10px rgba(0,0,0,0.07);
+      font-size: 13px;
+    }
+
+    .wa-header {
+      background: var(--wa-header);
+      padding: 9px 14px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .wa-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .wa-avatar.noa  { background: var(--wa-green); }
+    .wa-avatar.client { background: #54656f; }
+    .wa-avatar svg { width: 20px; height: 20px; }
+    .wa-avatar-initials { color: white; font-weight: 700; font-size: 13px; }
+
+    .wa-hinfo { flex: 1; }
+    .wa-hname { color: #e9edef; font-size: 14px; font-weight: 500; line-height: 1.2; }
+    .wa-hsub  { color: #8696a0; font-size: 11px; }
+
+    .wa-hicons { display: flex; gap: 14px; }
+    .wa-hicons svg { width: 18px; height: 18px; stroke: #aebac1; }
+
+    .wa-body {
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      background-color: #efeae2;
+      background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d1c7bb' fill-opacity='0.35'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+
+    .wa-datesep { text-align: center; margin: 4px 0 6px; }
+    .wa-datesep span {
+      background: #d1f0e4;
+      color: #54656f;
+      font-size: 11px;
+      padding: 3px 9px;
+      border-radius: 7px;
+    }
+
+    .wa-msg {
+      max-width: 84%;
+      padding: 5px 8px 6px;
+      border-radius: 8px;
+      line-height: 1.45;
+      color: #111b21;
+    }
+    .wa-msg.out {
+      background: var(--wa-out);
+      align-self: flex-end;
+      border-bottom-right-radius: 2px;
+    }
+    .wa-msg.in {
+      background: white;
+      align-self: flex-start;
+      border-bottom-left-radius: 2px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    .wa-msg strong { font-weight: 600; }
+
+    .wa-t {
+      font-size: 10px;
+      color: var(--wa-time);
+      text-align: right;
+      margin-top: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 2px;
+    }
+    .wa-check { color: #53bdeb; }
+
+    .wa-contact-card {
+      background: #f0f2f5;
+      border-radius: 6px;
+      padding: 8px 10px;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .wa-contact-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #54656f;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .wa-contact-avatar span { color: white; font-size: 12px; font-weight: 700; }
+    .wa-contact-name { font-size: 13px; font-weight: 600; color: #111b21; }
+    .wa-contact-num  { font-size: 11px; color: #8696a0; }
+
+    .wa-chips { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 4px; }
+    .wa-chip {
+      background: white;
+      border: 1px solid #d0d7de;
+      border-radius: 16px;
+      padding: 4px 10px;
+      font-size: 12px;
+      color: #00a884;
+      font-weight: 500;
+    }
+
+    .wa-input-row {
+      background: #2a3942;
+      padding: 7px 10px;
+      display: flex;
+      gap: 7px;
+      align-items: center;
+    }
+    .wa-input-fake {
+      flex: 1;
+      background: #2a3942;
+      border-radius: 18px;
+      padding: 8px 12px;
+      font-size: 13px;
+      color: #8696a0;
+    }
+    .wa-mic {
+      width: 36px;
+      height: 36px;
+      background: var(--wa-green);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .wa-mic svg { width: 16px; height: 16px; }
+
+    /* ── Logos bar ── */
+    .logos-bar {
+      padding: 2.5rem 2rem 1.5rem;
+      text-align: center;
+    }
+    .logos-label { font-size: 13px; color: var(--muted); margin-bottom: 1rem; }
+    .logos-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2.5rem;
+      flex-wrap: wrap;
+    }
+    .logo-pill {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 15px;
+      font-weight: 600;
+      color: #374151;
+    }
+    .logo-pill svg { width: 22px; height: 22px; }
+
+    /* ── Sections ── */
+    section { padding: 5rem 2rem; }
+    .section-inner { max-width: 1000px; margin: 0 auto; }
+
+    .section-label {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--brand);
+      margin-bottom: .75rem;
+    }
+
+    h2 {
+      font-size: clamp(1.6rem, 3vw, 2.2rem);
+      font-weight: 600;
+      letter-spacing: -0.025em;
+      line-height: 1.2;
+      margin-bottom: 1rem;
+    }
+    h2 em { font-family: 'Fraunces', serif; font-weight: 300; font-style: italic; }
+
+    .section-sub {
+      font-size: 1rem;
+      color: var(--muted);
+      max-width: 500px;
+      line-height: 1.7;
+      margin-bottom: 3rem;
+    }
+
+    /* ── How it works ── */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .step-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+    }
+
+    .step-num {
+      width: 36px;
+      height: 36px;
+      background: var(--brand-subtle);
+      color: var(--brand);
       border-radius: 10px;
-      background: #eff6ff;
+      font-size: 15px;
+      font-weight: 700;
       display: flex;
       align-items: center;
       justify-content: center;
       margin-bottom: 1rem;
-      font-size: 1.3rem;
     }
 
-    .card h3 {
-      font-size: 1.05rem;
-      font-weight: 700;
-      margin-bottom: 0.4rem;
-    }
+    .step-card h3 { font-size: 15px; font-weight: 600; margin-bottom: .4rem; }
+    .step-card p  { font-size: 14px; color: var(--muted); line-height: 1.6; }
 
-    .card p { color: var(--muted); font-size: 0.925rem; }
+    /* ── Features ── */
+    section.features { background: var(--bg); }
 
-    /* ── How it works ── */
-    .how {
-      padding: 5rem 1.5rem;
-    }
-
-    .steps {
-      display: flex;
-      flex-direction: column;
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 1.5rem;
-      max-width: 600px;
-      margin: 0 auto;
     }
 
-    .step {
-      display: flex;
-      gap: 1.25rem;
-      align-items: flex-start;
+    .feat-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
     }
 
-    .step-num {
-      flex-shrink: 0;
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: var(--brand);
-      color: var(--white);
-      font-weight: 700;
-      font-size: 0.9rem;
+    .feat-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
+      margin-bottom: 1rem;
+    }
+    .feat-icon.blue   { background: var(--brand-subtle); }
+    .feat-icon.green  { background: #dcfce7; }
+    .feat-icon.orange { background: #ffedd5; }
+    .feat-icon.purple { background: #ede9fe; }
+    .feat-icon svg { width: 22px; height: 22px; }
+
+    .feat-card h3 { font-size: 15px; font-weight: 600; margin-bottom: .4rem; }
+    .feat-card p  { font-size: 14px; color: var(--muted); line-height: 1.6; }
+
+    /* ── Pricing ── */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem;
+      max-width: 700px;
+      margin: 0 auto;
     }
 
-    .step h4 { font-weight: 700; margin-bottom: 0.25rem; }
-    .step p  { color: var(--muted); font-size: 0.925rem; }
+    .price-card {
+      background: white;
+      border: 1.5px solid var(--border);
+      border-radius: 20px;
+      padding: 2rem;
+      position: relative;
+    }
+    .price-card.featured { border-color: var(--brand); }
+
+    .price-badge {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--brand);
+      color: white;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 14px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .price-name   { font-size: 14px; font-weight: 600; color: var(--muted); margin-bottom: .75rem; }
+    .price-amount { display: flex; align-items: baseline; gap: 4px; margin-bottom: .75rem; }
+    .price-amount .num { font-size: 2.4rem; font-weight: 700; color: var(--text); }
+    .price-amount .period { font-size: 14px; color: var(--muted); }
+    .price-desc { font-size: 14px; color: var(--muted); margin-bottom: 1.5rem; line-height: 1.6; }
+
+    .price-features {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: .6rem;
+      margin-bottom: 1.5rem;
+    }
+    .price-features li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+    }
+    .price-features li::before {
+      content: '';
+      width: 16px;
+      height: 16px;
+      background: var(--brand-subtle);
+      border-radius: 50%;
+      flex-shrink: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232563eb' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+      background-size: 10px;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+
+    .price-btn {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1.5px solid var(--border);
+      background: white;
+      color: var(--text);
+      transition: opacity .15s;
+    }
+    .price-btn:hover { opacity: .8; }
+    .price-btn.primary {
+      background: var(--brand);
+      color: white;
+      border-color: var(--brand);
+      box-shadow: 0 4px 14px rgba(37,99,235,0.3);
+    }
+
+    /* ── Testimonials ── */
+    section.testimonials { background: var(--brand-bg); }
+
+    .testimonials-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .testimonial-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+    }
+    .testimonial-stars { color: #f59e0b; font-size: 14px; margin-bottom: .75rem; letter-spacing: 1px; }
+    .testimonial-text  { font-size: 14px; line-height: 1.7; color: var(--text); margin-bottom: 1rem; }
+    .testimonial-author { display: flex; align-items: center; gap: 10px; }
+    .testimonial-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--brand-subtle);
+      color: var(--brand);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+    .testimonial-name { font-size: 14px; font-weight: 600; }
+    .testimonial-job  { font-size: 12px; color: var(--muted); }
 
     /* ── CTA banner ── */
     .cta-banner {
       background: var(--brand);
-      color: var(--white);
+      padding: 5rem 2rem;
       text-align: center;
-      padding: 4.5rem 1.5rem;
     }
+    .cta-banner h2 { color: white; margin-bottom: .75rem; }
+    .cta-banner p  { color: rgba(255,255,255,0.75); margin-bottom: 2rem; font-size: 1rem; max-width: 440px; margin-left: auto; margin-right: auto; }
 
-    .cta-banner h2 {
-      font-size: clamp(1.5rem, 3vw, 2.25rem);
-      font-weight: 800;
-      letter-spacing: -0.025em;
-      margin-bottom: 0.75rem;
-    }
-
-    .cta-banner p {
-      opacity: 0.85;
-      max-width: 440px;
-      margin: 0 auto 2rem;
-    }
-
-    .cta-banner a {
-      display: inline-block;
-      background: var(--white);
+    .btn-white {
+      background: white;
       color: var(--brand);
-      padding: 0.85rem 2rem;
+      border: none;
       border-radius: 10px;
-      font-weight: 700;
+      padding: 13px 28px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
       text-decoration: none;
-      font-size: 1rem;
-      transition: opacity 0.15s;
+      display: inline-block;
+      transition: opacity .15s;
     }
-    .cta-banner a:hover { opacity: 0.9; }
+    .btn-white:hover { opacity: .9; }
 
     /* ── Footer ── */
     footer {
-      padding: 2rem 1.5rem;
-      border-top: 1px solid #e5e7eb;
+      border-top: 1px solid var(--border);
+      padding: 2rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
       flex-wrap: wrap;
-      gap: 1rem;
-    }
-
-    footer .logo { font-size: 1rem; }
-
-    footer nav { display: flex; gap: 1.5rem; }
-
-    footer nav a {
+      gap: .75rem;
+      font-size: 13px;
       color: var(--muted);
+    }
+    .footer-logo {
+      font-family: 'Fraunces', serif;
+      font-weight: 300;
+      font-style: italic;
+      font-size: 18px;
+      color: var(--text);
       text-decoration: none;
-      font-size: 0.875rem;
     }
-    footer nav a:hover { color: var(--text); }
+    footer a { color: var(--muted); text-decoration: none; }
+    footer a:hover { color: var(--text); }
 
-    footer p {
-      color: var(--muted);
-      font-size: 0.8rem;
-      width: 100%;
-      text-align: center;
-      margin-top: 0.5rem;
+    /* ── Responsive ── */
+    @media (max-width: 860px) {
+      .chats-row { grid-template-columns: 1fr; max-width: 420px; }
+      .nav-links  { display: none; }
+    }
+    @media (max-width: 600px) {
+      footer { flex-direction: column; text-align: center; }
     }
   </style>
 </head>
@@ -316,119 +668,345 @@
 
 <!-- Nav -->
 <nav>
-  <a class="logo" href="/">Noa</a>
-  <a class="cta-nav" href="#contacto">Solicitar acceso</a>
+  <a class="nav-logo" href="/">
+    <div class="nav-logo-icon">
+      <svg viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="52" height="52" rx="14" fill="#2563eb"/>
+        <path d="M12 18C12 15.8 13.8 14 16 14H36C38.2 14 40 15.8 40 18V30C40 32.2 38.2 34 36 34H28L20 40V34H16C13.8 34 12 32.2 12 30V18Z" fill="white"/>
+        <circle cx="20" cy="24" r="2.5" fill="#2563eb"/>
+        <circle cx="26" cy="24" r="2.5" fill="#2563eb" opacity="0.5"/>
+        <circle cx="32" cy="24" r="2.5" fill="#2563eb" opacity="0.2"/>
+      </svg>
+    </div>
+    <span class="nav-wordmark">Noa</span>
+  </a>
+  <div class="nav-links">
+    <a href="#como-funciona">Cómo funciona</a>
+    <a href="#funciones">Funciones</a>
+    <a href="#precios">Precios</a>
+  </div>
+  <a href="#contacto" class="nav-cta">Empezar gratis</a>
 </nav>
 
 <!-- Hero -->
 <section class="hero">
-  <div class="hero-badge">Para autónomos en España</div>
-  <h1>Gestiona tu negocio<br /><span>por WhatsApp y Telegram</span></h1>
-  <p>Noa es tu asistente de IA que crea facturas, gestiona tu agenda y se comunica con tus clientes — todo desde el chat, sin instalar nada.</p>
-  <a class="hero-cta" href="#contacto">
-    Solicitar acceso anticipado
-  </a>
-  <p class="hero-sub">Acceso gratuito durante el beta · Sin tarjeta de crédito</p>
+  <div class="hero-badge">
+    <div class="hero-badge-dot"></div>
+    Ya disponible en Telegram · WhatsApp próximamente
+  </div>
+  <h1>Tu negocio, gestionado por <em>voz</em></h1>
+  <p class="hero-sub">Noa es el asistente de WhatsApp para autónomos. Dicta lo que hiciste, genera facturas legales y cobra sin papeleo.</p>
+  <div class="hero-actions">
+    <a href="#contacto" class="btn-primary">Empezar gratis en Telegram →</a>
+    <a href="#como-funciona" class="btn-secondary">Ver cómo funciona</a>
+  </div>
 
-  <div class="channels">
-    <div class="channel-pill">
-      <!-- WhatsApp icon -->
-      <svg viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-      WhatsApp
+  <!-- Three WhatsApp mockups -->
+  <div class="chats-row">
+
+    <!-- Chat 1: Invoice -->
+    <div class="chat-col">
+      <p class="chat-label">Genera facturas al instante</p>
+      <div class="wa-wrap">
+        <div class="wa-header">
+          <div class="wa-avatar noa">
+            <svg viewBox="0 0 52 52" fill="none"><path d="M12 18C12 15.8 13.8 14 16 14H36C38.2 14 40 15.8 40 18V30C40 32.2 38.2 34 36 34H28L20 40V34H16C13.8 34 12 32.2 12 30V18Z" fill="white"/><circle cx="20" cy="24" r="2.5" fill="#25d366"/><circle cx="26" cy="24" r="2.5" fill="#25d366" opacity="0.5"/><circle cx="32" cy="24" r="2.5" fill="#25d366" opacity="0.2"/></svg>
+          </div>
+          <div class="wa-hinfo">
+            <div class="wa-hname">Noa</div>
+            <div class="wa-hsub">en línea</div>
+          </div>
+          <div class="wa-hicons">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 4.72 9.5a19.79 19.79 0 0 1-3-8.59A2 2 0 0 1 3.68 1h3a2 2 0 0 1 2 1.72A12.84 12.84 0 0 0 9.22 6.1a2 2 0 0 1-.45 2.11L7.91 9a16 16 0 0 0 7 7l.9-.9a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 3.38.7A2 2 0 0 1 22 16.92z"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+          </div>
+        </div>
+        <div class="wa-body">
+          <div class="wa-datesep"><span>Hoy</span></div>
+          <div class="wa-msg out">🎤 Estuve 3h en casa de Ana cambiando el grifo, 120€<div class="wa-t">14:31 <span class="wa-check">✓✓</span></div></div>
+          <div class="wa-msg in">Anotado ✓<br><strong>Cliente:</strong> Ana López<br><strong>Trabajo:</strong> Cambio de grifo<br><strong>Duración:</strong> 3h · <strong>Importe:</strong> 120€<br><br>¿Lo guardo? <strong>Sí / No / Editar</strong><div class="wa-t">14:31</div></div>
+          <div class="wa-msg out">Sí, y haz la factura<div class="wa-t">14:32 <span class="wa-check">✓✓</span></div></div>
+          <div class="wa-msg in">Factura <strong>2025-041</strong> generada ✓<br>Base: 120€ · IVA: 25,20€ · IRPF: –18€<br><strong>Total: 145,20€</strong><br><br>¿Se la envío a Ana ahora?<div class="wa-t">14:32</div></div>
+        </div>
+        <div class="wa-input-row">
+          <div class="wa-input-fake">Mensaje</div>
+          <div class="wa-mic"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></div>
+        </div>
+      </div>
     </div>
-    <div class="channel-pill">
-      <!-- Telegram icon -->
-      <svg viewBox="0 0 24 24" fill="#229ED9"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.96 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.244-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
-      Telegram
+
+    <!-- Chat 2: New client via shared contact -->
+    <div class="chat-col">
+      <p class="chat-label">Añade clientes automáticamente</p>
+      <div class="wa-wrap">
+        <div class="wa-header">
+          <div class="wa-avatar noa">
+            <svg viewBox="0 0 52 52" fill="none"><path d="M12 18C12 15.8 13.8 14 16 14H36C38.2 14 40 15.8 40 18V30C40 32.2 38.2 34 36 34H28L20 40V34H16C13.8 34 12 32.2 12 30V18Z" fill="white"/><circle cx="20" cy="24" r="2.5" fill="#25d366"/><circle cx="26" cy="24" r="2.5" fill="#25d366" opacity="0.5"/><circle cx="32" cy="24" r="2.5" fill="#25d366" opacity="0.2"/></svg>
+          </div>
+          <div class="wa-hinfo">
+            <div class="wa-hname">Noa</div>
+            <div class="wa-hsub">en línea</div>
+          </div>
+          <div class="wa-hicons">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 4.72 9.5a19.79 19.79 0 0 1-3-8.59A2 2 0 0 1 3.68 1h3a2 2 0 0 1 2 1.72A12.84 12.84 0 0 0 9.22 6.1a2 2 0 0 1-.45 2.11L7.91 9a16 16 0 0 0 7 7l.9-.9a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 3.38.7A2 2 0 0 1 22 16.92z"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+          </div>
+        </div>
+        <div class="wa-body">
+          <div class="wa-datesep"><span>Hoy</span></div>
+          <div class="wa-msg out">
+            <div style="font-size:11px;color:#8696a0;margin-bottom:4px;">Contacto compartido</div>
+            <div class="wa-contact-card">
+              <div class="wa-contact-avatar"><span>CM</span></div>
+              <div>
+                <div class="wa-contact-name">Carlos Martínez</div>
+                <div class="wa-contact-num">+34 611 234 567</div>
+              </div>
+            </div>
+            <div class="wa-t">10:14 <span class="wa-check">✓✓</span></div>
+          </div>
+          <div class="wa-msg in">
+            Cliente añadido ✓<br>
+            <strong>Carlos Martínez</strong> ya está en tu lista.<br>
+            +34 611 234 567<br><br>
+            ¿Qué quieres hacer?
+            <div class="wa-chips">
+              <div class="wa-chip">Registrar trabajo</div>
+              <div class="wa-chip">Agendar cita</div>
+            </div>
+            <div class="wa-t">10:14</div>
+          </div>
+          <div class="wa-msg out">Agendar cita<div class="wa-t">10:15 <span class="wa-check">✓✓</span></div></div>
+          <div class="wa-msg in">¿Cuándo y a qué hora?<br><span style="color:#8696a0;font-size:11px;">Ej: "Viernes a las 9" o "15 de mayo a las 11"</span><div class="wa-t">10:15</div></div>
+          <div class="wa-msg out">Mañana jueves a las 10<div class="wa-t">10:15 <span class="wa-check">✓✓</span></div></div>
+          <div class="wa-msg in">Cita agendada ✓<br><strong>Carlos Martínez</strong><br>Jueves 15 de mayo · 10:00h<br>Añadido a Google Calendar.<div class="wa-t">10:15</div></div>
+        </div>
+        <div class="wa-input-row">
+          <div class="wa-input-fake">Mensaje</div>
+          <div class="wa-mic"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat 3: Noa talks to the client -->
+    <div class="chat-col">
+      <p class="chat-label">Noa atiende a tus clientes</p>
+      <div class="wa-wrap">
+        <div class="wa-header">
+          <div class="wa-avatar client"><span class="wa-avatar-initials">FG</span></div>
+          <div class="wa-hinfo">
+            <div class="wa-hname">Fontanería García</div>
+            <div class="wa-hsub">con Noa · asistente</div>
+          </div>
+          <div class="wa-hicons">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 4.72 9.5a19.79 19.79 0 0 1-3-8.59A2 2 0 0 1 3.68 1h3a2 2 0 0 1 2 1.72A12.84 12.84 0 0 0 9.22 6.1a2 2 0 0 1-.45 2.11L7.91 9a16 16 0 0 0 7 7l.9-.9a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 3.38.7A2 2 0 0 1 22 16.92z"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+          </div>
+        </div>
+        <div class="wa-body">
+          <div class="wa-datesep"><span>Hoy</span></div>
+          <div class="wa-msg out">Hola, ¿podéis venir a arreglar una gotera?<div class="wa-t">11:02 <span class="wa-check">✓✓</span></div></div>
+          <div class="wa-msg in">Hola Ana, soy Noa, la asistente de Fontanería García. ¡Claro!<br><br>Tengo disponibilidad esta semana:<br>· <strong>Jueves 15</strong> a las 16:00h<br>· <strong>Viernes 16</strong> a las 10:00h<br><br>¿Cuál te viene mejor?<div class="wa-t">11:02</div></div>
+          <div class="wa-msg out">El viernes a las 10 perfecto<div class="wa-t">11:04 <span class="wa-check">✓✓</span></div></div>
+          <div class="wa-msg in">Perfecto ✓ Cita confirmada:<br><strong>Viernes 16 de mayo · 10:00h</strong><br>Te recordaré el día anterior.<br><br>Por cierto, te hemos enviado la factura del trabajo del mes pasado a tu correo. ¿La has recibido?<div class="wa-t">11:04</div></div>
+          <div class="wa-msg out">Sí, la vi. La pago esta semana<div class="wa-t">11:06 <span class="wa-check">✓✓</span></div></div>
+          <div class="wa-msg in">Perfecto, puedes pagar por Bizum al <strong>611 000 000</strong> o transferencia al <strong>ES91 2100 0418 45</strong>.<br><br>¡Hasta el viernes, Ana! 👋<div class="wa-t">11:06</div></div>
+        </div>
+        <div class="wa-input-row">
+          <div class="wa-input-fake">Mensaje</div>
+          <div class="wa-mic"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Logos bar -->
+<div class="logos-bar">
+  <p class="logos-label">Pensado para los que trabajan con sus manos</p>
+  <div class="logos-row">
+    <span class="logo-pill"><svg viewBox="0 0 24 24" fill="none" stroke="#374151" stroke-width="1.5"><path d="M12 2a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM6 20v-2a6 6 0 0 1 12 0v2"/></svg>Fontaneros</span>
+    <span class="logo-pill"><svg viewBox="0 0 24 24" fill="none" stroke="#374151" stroke-width="1.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>Electricistas</span>
+    <span class="logo-pill"><svg viewBox="0 0 24 24" fill="none" stroke="#374151" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Albañiles</span>
+    <span class="logo-pill"><svg viewBox="0 0 24 24" fill="none" stroke="#374151" stroke-width="1.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Pintores</span>
+    <span class="logo-pill"><svg viewBox="0 0 24 24" fill="none" stroke="#374151" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>Manitas</span>
+  </div>
+</div>
+
+<!-- How it works -->
+<section id="como-funciona">
+  <div class="section-inner">
+    <div class="section-label">Cómo funciona</div>
+    <h2>Del trabajo terminado a la factura enviada <em>en segundos</em></h2>
+    <p class="section-sub">Sin formularios. Sin apps nuevas. Solo habla con Noa igual que le hablas a un cliente.</p>
+    <div class="steps">
+      <div class="step-card">
+        <div class="step-num">1</div>
+        <h3>Cuéntale lo que hiciste</h3>
+        <p>Manda un audio o texto desde WhatsApp o Telegram. Noa extrae cliente, trabajo, horas e importe automáticamente.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">2</div>
+        <h3>Noa genera la factura legal</h3>
+        <p>PDF con numeración secuencial, IVA, IRPF y formato SII-compatible. Sin tocar ningún programa de facturación.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">3</div>
+        <h3>Se la envía a tu cliente</h3>
+        <p>Directamente al WhatsApp del cliente. Y si no paga a tiempo, Noa le manda el recordatorio por ti.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">4</div>
+        <h3>Cierre trimestral sin sustos</h3>
+        <p>Excel con todo listo para el modelo 303 y 130. Tu gestor lo agradecerá — o te ahorras el gestor directamente.</p>
+      </div>
     </div>
   </div>
 </section>
 
 <!-- Features -->
 <section class="features" id="funciones">
-  <p class="section-label">Funcionalidades</p>
-  <h2 class="section-title">Todo lo que necesitas, en un chat</h2>
-  <p class="section-sub">Noa entiende lo que le pides en lenguaje natural — por voz o texto — y lo hace por ti.</p>
-
-  <div class="grid">
-    <div class="card">
-      <div class="card-icon">🧾</div>
-      <h3>Facturas al instante</h3>
-      <p>Crea, envía y registra facturas conformes con el SII. IVA e IRPF calculados automáticamente.</p>
-    </div>
-    <div class="card">
-      <div class="card-icon">📅</div>
-      <h3>Agenda integrada</h3>
-      <p>Gestiona citas y disponibilidad directamente desde el chat, sincronizado con Google Calendar.</p>
-    </div>
-    <div class="card">
-      <div class="card-icon">👥</div>
-      <h3>Gestión de clientes</h3>
-      <p>Busca clientes, consulta su historial y comunícate con ellos — todo sin salir de WhatsApp.</p>
-    </div>
-    <div class="card">
-      <div class="card-icon">🎙️</div>
-      <h3>Por voz o texto</h3>
-      <p>Manda un audio diciendo «factura a Ana por 500 euros» y Noa se encarga del resto.</p>
-    </div>
-    <div class="card">
-      <div class="card-icon">📄</div>
-      <h3>Presupuestos en PDF</h3>
-      <p>Genera y envía presupuestos profesionales en segundos, listos para firmar.</p>
-    </div>
-    <div class="card">
-      <div class="card-icon">🔒</div>
-      <h3>Tus datos, seguros</h3>
-      <p>Cada autónomo tiene su espacio aislado. Nunca compartimos datos entre clientes.</p>
-    </div>
-  </div>
-</section>
-
-<!-- How it works -->
-<section class="how" id="como-funciona">
-  <p class="section-label">Cómo funciona</p>
-  <h2 class="section-title" style="text-align:center; margin-bottom:0.75rem;">En tres pasos</h2>
-  <p class="section-sub" style="margin-bottom:2.5rem;">Sin apps que instalar. Sin contraseñas que recordar.</p>
-
-  <div class="steps">
-    <div class="step">
-      <div class="step-num">1</div>
-      <div>
-        <h4>Te damos acceso</h4>
-        <p>Te añadimos a Noa en WhatsApp o Telegram. Configuras tus datos fiscales en un par de minutos.</p>
+  <div class="section-inner">
+    <div class="section-label">Funciones</div>
+    <h2>Todo lo que necesita un autónomo, <em>nada más</em></h2>
+    <p class="section-sub">Sin suscripciones de software que nunca usas. Solo lo que te hace ganar tiempo y cobrar más rápido.</p>
+    <div class="features-grid">
+      <div class="feat-card">
+        <div class="feat-icon blue">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.8"><path d="M12 2a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/><path d="M3 20v-1a7 7 0 0 1 14 0v1"/></svg>
+        </div>
+        <h3>Registro de clientes y trabajos</h3>
+        <p>Cada trabajo queda guardado con fecha, duración e importe. Busca el historial de cualquier cliente en segundos.</p>
       </div>
-    </div>
-    <div class="step">
-      <div class="step-num">2</div>
-      <div>
-        <h4>Habla con Noa como hablarías con un asistente</h4>
-        <p>«Crea una factura para Juan por la instalación de ayer, 320 euros» — por texto o por voz.</p>
+      <div class="feat-card">
+        <div class="feat-icon green">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <h3>Agenda integrada</h3>
+        <p>"Cita con Pepe el jueves a las 10" → evento en Google Calendar. Y el bot gestiona la disponibilidad con tus clientes.</p>
       </div>
-    </div>
-    <div class="step">
-      <div class="step-num">3</div>
-      <div>
-        <h4>Noa lo gestiona todo</h4>
-        <p>La factura se genera, se registra y se envía. Tú recibes la confirmación y sigues con tu trabajo.</p>
+      <div class="feat-card">
+        <div class="feat-icon orange">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <h3>Cobros y recordatorios</h3>
+        <p>Noa detecta las facturas impagadas y manda recordatorios automáticos a tus clientes en tu nombre.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon purple">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        </div>
+        <h3>Resumen fiscal trimestral</h3>
+        <p>Excel con ingresos y gastos desglosados para el modelo 303 y 130. Con avisos de fecha límite incluidos.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon blue">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        </div>
+        <h3>Presupuestos profesionales</h3>
+        <p>Genera un presupuesto por voz y envíaselo al cliente en PDF. Si acepta, conviértelo en factura con un mensaje.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon green">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <h3>Bot para tus clientes</h3>
+        <p>Tus clientes escriben al mismo número. Noa les atiende: reservan cita, piden presupuesto y pagan sin molestar.</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- CTA -->
+<!-- Pricing -->
+<section id="precios">
+  <div class="section-inner" style="text-align: center;">
+    <div class="section-label">Precios</div>
+    <h2>Sin sorpresas, sin permanencia</h2>
+    <p class="section-sub" style="margin: 0 auto 3rem;">Pruébalo gratis el primer mes. Cancela cuando quieras.</p>
+    <div class="pricing-grid">
+      <div class="price-card">
+        <div class="price-name">AUTÓNOMO</div>
+        <div class="price-amount"><span class="num">19€</span><span class="period">/mes</span></div>
+        <p class="price-desc">Para el autónomo que quiere facturas rápidas sin complicaciones.</p>
+        <ul class="price-features">
+          <li>Facturas y presupuestos ilimitados</li>
+          <li>Agenda con Google Calendar</li>
+          <li>Historial de clientes</li>
+          <li>Resumen fiscal trimestral</li>
+          <li>Soporte por chat</li>
+        </ul>
+        <button class="price-btn" onclick="location.href='#contacto'">Empezar gratis</button>
+      </div>
+      <div class="price-card featured">
+        <div class="price-badge">Más popular</div>
+        <div class="price-name">PRO</div>
+        <div class="price-amount"><span class="num">39€</span><span class="period">/mes</span></div>
+        <p class="price-desc">Para quien quiere que el bot atienda a sus clientes de forma autónoma.</p>
+        <ul class="price-features">
+          <li>Todo lo de Autónomo</li>
+          <li>Bot para clientes (reservas, pagos)</li>
+          <li>Recordatorios automáticos de cobro</li>
+          <li>Reseñas automáticas Google Maps</li>
+          <li>Soporte prioritario</li>
+        </ul>
+        <button class="price-btn primary" onclick="location.href='#contacto'">Empezar gratis</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Testimonials -->
+<section class="testimonials">
+  <div class="section-inner">
+    <div class="section-label">Lo dicen nuestros usuarios</div>
+    <h2>Autónomos que recuperaron su <em>tiempo</em></h2>
+    <p class="section-sub">No más domingos revisando facturas. No más clientes esperando el presupuesto.</p>
+    <div class="testimonials-grid">
+      <div class="testimonial-card">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-text">"Antes tardaba una hora cada semana en las facturas. Ahora mando un audio de 10 segundos cuando salgo del trabajo y listo. Mi gestor está flipando."</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">JG</div>
+          <div><div class="testimonial-name">Javier García</div><div class="testimonial-job">Fontanero · Madrid</div></div>
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-text">"Tenía miedo de que fuera complicado pero es como hablar con un asistente. Le digo lo que hice y él genera la factura con IVA e IRPF perfectamente."</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">MP</div>
+          <div><div class="testimonial-name">María Pérez</div><div class="testimonial-job">Electricista · Barcelona</div></div>
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-text">"Lo mejor es que mis clientes me escriben por WhatsApp y Noa les gestiona la cita sola. Antes perdía trabajos por no contestar a tiempo."</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">AR</div>
+          <div><div class="testimonial-name">Antonio Ruiz</div><div class="testimonial-job">Pintor · Sevilla</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA Banner -->
 <section class="cta-banner" id="contacto">
-  <h2>Empieza gratis durante el beta</h2>
-  <p>Estamos incorporando autónomos de forma gradual. Apúntate y te avisamos cuando te toque.</p>
-  <a href="mailto:hola@botnoa.com?subject=Quiero%20acceso%20a%20Noa">Solicitar acceso</a>
+  <h2>Empieza hoy. El primer mes es gratis.</h2>
+  <p>Sin tarjeta de crédito. Sin permanencia. Solo abre Telegram y escríbenos.</p>
+  <a href="https://t.me/noabot" class="btn-white">Abrir Noa en Telegram →</a>
 </section>
 
 <!-- Footer -->
 <footer>
-  <a class="logo" href="/">Noa</a>
-  <nav>
-    <a href="/privacy.html">Política de privacidad</a>
-  </nav>
-  <p>© 2026 Noa · Hecho en España</p>
+  <a href="/" class="footer-logo">Noa</a>
+  <div style="display: flex; gap: 1.5rem;">
+    <a href="/terms.html">Términos</a>
+    <a href="/privacy.html">Privacidad</a>
+    <a href="mailto:info@botnoa.com">Contacto</a>
+  </div>
+  <span>© 2026 Noa · Hecho en España 🇪🇸</span>
 </footer>
 
 </body>
