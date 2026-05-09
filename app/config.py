@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     google_client_secret: str = ""
     google_redirect_uri: str = "http://localhost:8000/auth/google/callback"
     sentry_dsn: str = ""
+    feature_hybrid_client_roster: bool = True
 
 
 settings = Settings()  # type: ignore[call-arg]
