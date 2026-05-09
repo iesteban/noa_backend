@@ -39,6 +39,7 @@ jobs:
           cat > infra/terraform/terraform.tfvars.production <<'EOF'
           environment = "production"
           enable_lb   = true
+          api_domain  = "api.botnoa.com"
           EOF
 
       - name: Get registry endpoint
@@ -80,8 +81,8 @@ jobs:
           TF_VAR_google_client_secret: ${{ secrets.PRODUCTION_GOOGLE_CLIENT_SECRET }}
           TF_VAR_google_redirect_uri: ${{ secrets.PRODUCTION_GOOGLE_REDIRECT_URI }}
           TF_VAR_sentry_dsn: ${{ secrets.PRODUCTION_SENTRY_DSN }}
-          TF_VAR_cloudflare_api_token: ${{ secrets.PRODUCTION_CLOUDFLARE_API_TOKEN }}
-          TF_VAR_cloudflare_zone_id: ${{ secrets.PRODUCTION_CLOUDFLARE_ZONE_ID }}
+          TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
           TF_VAR_twilio_account_sid: ${{ secrets.PRODUCTION_TWILIO_ACCOUNT_SID }}
           TF_VAR_twilio_api_key_sid: ${{ secrets.PRODUCTION_TWILIO_API_KEY_SID }}
           TF_VAR_twilio_client_secret: ${{ secrets.PRODUCTION_TWILIO_CLIENT_SECRET }}
@@ -89,6 +90,8 @@ jobs:
         run: |
           terraform apply -auto-approve \
             -target=scaleway_container.api \
+            -target=scaleway_container_domain.api \
+            -target=cloudflare_record.api \
             -var-file=terraform.tfvars.production \
             -var "image_tag=${{ steps.sha.outputs.value }}"
 
