@@ -7,7 +7,7 @@ import secrets
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -80,10 +80,95 @@ async def google_connect(state: str, db: AsyncSession = Depends(get_db)) -> Redi
     return RedirectResponse(url=auth_url)
 
 
+_SUCCESS_HTML = """<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Google Calendar conectado · Noa</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@1,300&display=swap"
+        rel="stylesheet" />
+  <style>
+    :root {
+      --brand: #2563eb;
+      --text:  #111827;
+      --muted: #6b7280;
+      --bg:    #f9fafb;
+      --white: #ffffff;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      background: var(--white);
+      border-radius: 16px;
+      padding: 48px 40px;
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    }
+    .check {
+      width: 64px;
+      height: 64px;
+      background: #dcfce7;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+      font-size: 32px;
+    }
+    h1 {
+      font-family: 'Fraunces', serif;
+      font-weight: 300;
+      font-style: italic;
+      font-size: 26px;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+    p {
+      font-size: 15px;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+    .btn {
+      display: inline-block;
+      background: var(--brand);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 500;
+      padding: 12px 28px;
+      border-radius: 8px;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="check">✓</div>
+    <h1>¡Calendario conectado!</h1>
+    <p>Google Calendar está vinculado a tu cuenta de Noa.<br>Ya puedo ver y gestionar tu agenda.</p>
+    {cta}
+  </div>
+</body>
+</html>"""
+
+
 @router.get("/callback")
 async def google_callback(
     code: str, state: str, db: AsyncSession = Depends(get_db)
-) -> dict[str, str]:
+) -> HTMLResponse:
     """Handle Google OAuth callback, store tokens, notify contractor."""
     result = await db.execute(
         select(CalendarToken).where(
@@ -119,4 +204,9 @@ async def google_callback(
         except Exception:
             logger.warning("Could not notify contractor %s after calendar connect", contractor.id)
 
-    return {"status": "ok", "message": "Google Calendar conectado correctamente."}
+    cta = (
+        f'<a class="btn" href="https://t.me/{settings.telegram_bot_username}">Volver a Telegram</a>'
+        if settings.telegram_bot_username
+        else '<p style="color:var(--muted);font-size:13px">Puedes cerrar esta pestaña.</p>'
+    )
+    return HTMLResponse(_SUCCESS_HTML.format(cta=cta))
