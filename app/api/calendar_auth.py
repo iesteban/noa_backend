@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import base64
+import hashlib
 import logging
+import secrets
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -38,6 +41,17 @@ def _make_flow() -> Any:
     )
 
 
+def _pkce_pair() -> tuple[str, str]:
+    """Return (code_verifier, code_challenge) using S256."""
+    verifier = secrets.token_urlsafe(32)
+    challenge = (
+        base64.urlsafe_b64encode(hashlib.sha256(verifier.encode("ascii")).digest())
+        .rstrip(b"=")
+        .decode("ascii")
+    )
+    return verifier, challenge
+
+
 @router.get("/connect")
 async def google_connect(state: str, db: AsyncSession = Depends(get_db)) -> RedirectResponse:
     """Redirect contractor to Google OAuth consent screen."""
@@ -51,11 +65,17 @@ async def google_connect(state: str, db: AsyncSession = Depends(get_db)) -> Redi
     if token is None:
         raise HTTPException(status_code=400, detail="Invalid or expired state.")
 
+    code_verifier, code_challenge = _pkce_pair()
+    token.code_verifier = code_verifier
+    await db.flush()
+
     flow = _make_flow()
     auth_url, _ = flow.authorization_url(
         state=state,
         access_type="offline",
         prompt="consent",
+        code_challenge=code_challenge,
+        code_challenge_method="S256",
     )
     return RedirectResponse(url=auth_url)
 
@@ -77,7 +97,7 @@ async def google_callback(
 
     flow = _make_flow()
     try:
-        flow.fetch_token(code=code)
+        flow.fetch_token(code=code, code_verifier=token.code_verifier)
     except Exception as exc:
         logger.error("Google token exchange failed: %s", exc)
         raise HTTPException(status_code=400, detail="Token exchange failed.") from exc
