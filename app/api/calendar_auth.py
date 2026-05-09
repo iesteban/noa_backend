@@ -67,7 +67,7 @@ async def google_connect(state: str, db: AsyncSession = Depends(get_db)) -> Redi
 
     code_verifier, code_challenge = _pkce_pair()
     token.code_verifier = code_verifier
-    await db.flush()
+    await db.commit()
 
     flow = _make_flow()
     auth_url, _ = flow.authorization_url(
