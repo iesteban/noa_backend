@@ -16,7 +16,7 @@ def _get_client() -> Client:
     global _client
     if _client is None:
         _client = Client(
-            settings.twilio_api_key,
+            settings.twilio_api_key_sid,
             settings.twilio_client_secret,
             settings.twilio_account_sid,
         )

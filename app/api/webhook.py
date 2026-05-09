@@ -66,7 +66,7 @@ async def _dispatch(inbound: InboundMessage, send: MessageSender, channel: str) 
                 else:
                     text, media_url = await transcribe_from_url(
                         inbound.file_id,
-                        auth=(settings.twilio_api_key, settings.twilio_client_secret),
+                        auth=(settings.twilio_api_key_sid, settings.twilio_client_secret),
                     )
             except Exception as exc:
                 sentry_sdk.capture_exception(exc)

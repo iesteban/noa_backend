@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     sentry_dsn: str = ""
     feature_hybrid_client_roster: bool = True
     twilio_account_sid: str = ""
-    twilio_api_key: str = ""     # Key SID, e.g. "SKxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    twilio_api_key_sid: str = ""  # API Key SID, e.g. "SKxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
     twilio_client_secret: str = ""  # Client Secret shown once at API key creation
     twilio_whatsapp_from: str = ""  # E.164, e.g. "+14155238886"
 
