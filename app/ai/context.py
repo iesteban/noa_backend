@@ -6,6 +6,7 @@ from sqlalchemy import cast, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.types import Date as SADate
 
+from app.config import settings
 from app.models.client import Client
 from app.models.contractor import Contractor
 from app.models.job import Job
@@ -49,9 +50,7 @@ async def get_recent_clients(
 
 
 async def build_contractor_context(db: AsyncSession, contractor: Contractor) -> str:
-    """Build Layer 3 — contractor profile + hybrid client roster for the system prompt."""
-    clients, total = await get_recent_clients(db, contractor.id)
-
+    """Build Layer 3 — contractor profile + client roster for the system prompt."""
     lines: list[str] = [
         "## Tu perfil",
         f"Nombre: {contractor.name}",
@@ -67,18 +66,32 @@ async def build_contractor_context(db: AsyncSession, contractor: Contractor) -> 
         "",
     ]
 
-    if total == 0:
-        lines += ["## Clientes (0)", "(sin clientes aún)"]
-    elif total <= _ROSTER_LIMIT:
-        lines.append(f"## Clientes ({total})")
-        for c in clients:
-            lines.append(f"- {c.name}  id={c.id}  tel={c.phone_number}")
+    if settings.feature_hybrid_client_roster:
+        clients, total = await get_recent_clients(db, contractor.id)
+        if total == 0:
+            lines += ["## Clientes (0)", "(sin clientes aún)"]
+        elif total <= _ROSTER_LIMIT:
+            lines.append(f"## Clientes ({total})")
+            for c in clients:
+                lines.append(f"- {c.name}  id={c.id}  tel={c.phone_number}")
+        else:
+            lines.append(
+                f"## Clientes recientes ({len(clients)} de {total}"
+                f" — usa search_client para los demás)"
+            )
+            for c in clients:
+                lines.append(f"- {c.name}  id={c.id}  tel={c.phone_number}")
     else:
-        lines.append(
-            f"## Clientes recientes ({len(clients)} de {total}"
-            f" — usa search_client para los demás)"
+        result = await db.execute(
+            select(Client)
+            .where(Client.contractor_id == contractor.id)
+            .order_by(Client.name)
         )
-        for c in clients:
+        clients_all = list(result.scalars().all())
+        lines.append(f"## Clientes ({len(clients_all)})")
+        for c in clients_all:
             lines.append(f"- {c.name}  id={c.id}  tel={c.phone_number}")
+        if not clients_all:
+            lines.append("(sin clientes aún)")
 
     return "\n".join(lines)
