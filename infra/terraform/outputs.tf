@@ -38,3 +38,8 @@ output "database_url" {
   value       = local.database_url
   sensitive   = true
 }
+
+output "landing_url" {
+  description = "Scaleway static website URL for the landing page"
+  value       = "https://${scaleway_object_bucket.www.name}.s3-website.${var.region}.scw.cloud"
+}

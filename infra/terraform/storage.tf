@@ -38,3 +38,20 @@ resource "scaleway_iam_api_key" "api" {
   description    = "noa-api bucket access (${var.environment})"
   expires_at     = "2027-05-01T00:00:00Z"
 }
+
+# Landing page bucket — public static website, not environment-scoped.
+# Only apply this with the production tfvars.
+resource "scaleway_object_bucket" "www" {
+  name   = "noa-www"
+  region = var.region
+
+  website {
+    index_document = "index.html"
+    error_document = "404.html"
+  }
+}
+
+resource "scaleway_object_bucket_acl" "www" {
+  bucket = scaleway_object_bucket.www.name
+  acl    = "public-read"
+}
