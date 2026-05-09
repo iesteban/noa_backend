@@ -126,6 +126,10 @@ jobs:
           TF_VAR_google_client_secret: ${{ secrets.STAGING_GOOGLE_CLIENT_SECRET }}
           TF_VAR_google_redirect_uri: ${{ secrets.STAGING_GOOGLE_REDIRECT_URI }}
           TF_VAR_sentry_dsn: ${{ secrets.STAGING_SENTRY_DSN }}
+          TF_VAR_twilio_account_sid: ${{ secrets.STAGING_TWILIO_ACCOUNT_SID }}
+          TF_VAR_twilio_api_key_sid: ${{ secrets.STAGING_TWILIO_API_KEY_SID }}
+          TF_VAR_twilio_client_secret: ${{ secrets.STAGING_TWILIO_CLIENT_SECRET }}
+          TF_VAR_twilio_whatsapp_from: ${{ secrets.STAGING_TWILIO_WHATSAPP_FROM }}
         run: |
           terraform apply -auto-approve \
             -target=scaleway_container.api \
