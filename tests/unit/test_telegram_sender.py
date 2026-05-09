@@ -25,7 +25,7 @@ class TestSendMessage:
 
             from app.messaging.telegram_sender import send_message
 
-            await send_message(chat_id=111, text="Hola")
+            await send_message(recipient_id="111", text="Hola")
 
         mock_client.post.assert_awaited_once()
 
@@ -47,7 +47,7 @@ class TestSendMessage:
 
             from app.messaging.telegram_sender import send_message
 
-            await send_message(chat_id=111, text="Recibido")
+            await send_message(recipient_id="111", text="Recibido")
 
         _, kwargs = mock_client.post.call_args
         payload = kwargs.get("json", {})
@@ -72,7 +72,7 @@ class TestSendMessage:
 
             from app.messaging.telegram_sender import send_message
 
-            await send_message(chat_id=111, text="hi")
+            await send_message(recipient_id="111", text="hi")
 
         url = mock_client.post.call_args[0][0]
         assert "my-secret-token" in url
@@ -98,7 +98,7 @@ class TestSendMessage:
 
             from app.messaging.telegram_sender import send_message
 
-            await send_message(chat_id=111, text="hi")
+            await send_message(recipient_id="111", text="hi")
 
         mock_logger.error.assert_called_once()
 
@@ -124,4 +124,4 @@ class TestSendMessage:
             from app.messaging.telegram_sender import send_message
 
             # Must not raise
-            await send_message(chat_id=111, text="hi")
+            await send_message(recipient_id="111", text="hi")

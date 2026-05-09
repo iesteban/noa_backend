@@ -58,7 +58,7 @@ class TestContractorByTelegramChatId:
         cont = _contractor(telegram_chat_id="111")
         db.execute.return_value = _scalar_result(cont)
 
-        result = await resolve_routing(db, telegram_chat_id=111)
+        result = await resolve_routing(db, telegram_chat_id="111")
 
         assert result.user_type == UserType.contractor
         assert result.contractor_id == cont.id
@@ -70,7 +70,7 @@ class TestContractorByTelegramChatId:
         db = AsyncMock()
         db.execute.return_value = _scalar_result(_contractor(telegram_chat_id="111"))
 
-        await resolve_routing(db, telegram_chat_id=111)
+        await resolve_routing(db, telegram_chat_id="111")
 
         db.execute.assert_called_once()
 
@@ -89,7 +89,7 @@ class TestContractorByPhoneNumber:
             _scalar_result(cont),   # phone_number → contractor hit
         ]
 
-        result = await resolve_routing(db, telegram_chat_id=999, phone_number="+34600000001")
+        result = await resolve_routing(db, telegram_chat_id="999", phone_number="+34600000001")
 
         assert result.user_type == UserType.contractor
         assert result.contractor_id == cont.id
@@ -103,7 +103,7 @@ class TestContractorByPhoneNumber:
             _scalar_result(cont),
         ]
 
-        result = await resolve_routing(db, telegram_chat_id=999, phone_number="+34600000001")
+        result = await resolve_routing(db, telegram_chat_id="999", phone_number="+34600000001")
 
         assert result.contractor_id == cont.id
 
@@ -124,7 +124,7 @@ class TestClientRouting:
             _scalars_result([client]),      # phone_number → client
         ]
 
-        result = await resolve_routing(db, telegram_chat_id=999, phone_number="+34600000002")
+        result = await resolve_routing(db, telegram_chat_id="999", phone_number="+34600000002")
 
         assert result.user_type == UserType.client
         assert result.contractor_id == cid
@@ -142,7 +142,7 @@ class TestClientRouting:
             _scalars_result([client]),
         ]
 
-        result = await resolve_routing(db, telegram_chat_id=999, phone_number="+34600000002")
+        result = await resolve_routing(db, telegram_chat_id="999", phone_number="+34600000002")
 
         assert result.client_id == client.id
 
@@ -170,7 +170,7 @@ class TestDisambiguation:
             _scalars_result([cont1, cont2]),
         ]
 
-        result = await resolve_routing(db, telegram_chat_id=999, phone_number="+34600000003")
+        result = await resolve_routing(db, telegram_chat_id="999", phone_number="+34600000003")
 
         assert result.user_type is None
         assert result.contractor_id is None
@@ -195,7 +195,7 @@ class TestDisambiguation:
             _scalars_result([cont1, cont2]),
         ]
 
-        result = await resolve_routing(db, telegram_chat_id=999, phone_number="+34600000003")
+        result = await resolve_routing(db, telegram_chat_id="999", phone_number="+34600000003")
 
         names = [name for _, name in result.candidates]
         assert "Fontanería García" in names
@@ -223,7 +223,7 @@ class TestDisambiguation:
             _scalars_result([cont1, cont2]),
         ]
 
-        result = await resolve_routing(db, telegram_chat_id=999, phone_number="+34600000004")
+        result = await resolve_routing(db, telegram_chat_id="999", phone_number="+34600000004")
 
         names = [name for _, name in result.candidates]
         assert "Pedro García" in names
@@ -240,7 +240,7 @@ class TestUnknownUser:
         db = AsyncMock()
         db.execute.return_value = _scalar_result(None)
 
-        result = await resolve_routing(db, telegram_chat_id=999)
+        result = await resolve_routing(db, telegram_chat_id="999")
 
         assert result.user_type is None
 
@@ -249,7 +249,7 @@ class TestUnknownUser:
         db = AsyncMock()
         db.execute.return_value = _scalar_result(None)
 
-        result = await resolve_routing(db, telegram_chat_id=999)
+        result = await resolve_routing(db, telegram_chat_id="999")
 
         assert result.candidates == []
 
@@ -258,7 +258,7 @@ class TestUnknownUser:
         db = AsyncMock()
         db.execute.return_value = _scalar_result(None)
 
-        await resolve_routing(db, telegram_chat_id=999, phone_number=None)
+        await resolve_routing(db, telegram_chat_id="999", phone_number=None)
 
         db.execute.assert_called_once()
 
@@ -271,7 +271,7 @@ class TestUnknownUser:
             _scalars_result([]),        # phone → clients
         ]
 
-        result = await resolve_routing(db, telegram_chat_id=999, phone_number="+34699999999")
+        result = await resolve_routing(db, telegram_chat_id="999", phone_number="+34699999999")
 
         assert result.user_type is None
         assert result.candidates == []

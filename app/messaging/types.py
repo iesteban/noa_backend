@@ -17,7 +17,7 @@ class MessageType(enum.StrEnum):
 
 class InboundMessage(BaseModel):
     update_id: int
-    chat_id: int
+    recipient_id: str  # opaque channel identifier used to send replies back
     phone_number: str | None
     message_type: MessageType
     text: str | None
@@ -25,4 +25,4 @@ class InboundMessage(BaseModel):
 
 
 class MessageSender(Protocol):
-    async def __call__(self, chat_id: int, text: str) -> None: ...
+    async def __call__(self, recipient_id: str, text: str) -> None: ...

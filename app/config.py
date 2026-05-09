@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     google_redirect_uri: str = "http://localhost:8000/auth/google/callback"
     sentry_dsn: str = ""
     feature_hybrid_client_roster: bool = True
+    twilio_account_sid: str = ""
+    twilio_auth_token: str = ""
+    twilio_whatsapp_from: str = ""  # E.164, e.g. "+14155238886"
 
 
 settings = Settings()  # type: ignore[call-arg]

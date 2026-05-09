@@ -15,12 +15,12 @@ def parse_update(update: TelegramUpdate) -> InboundMessage | None:
         logger.info("Update %d has no message — skipping", update.update_id)
         return None
 
-    chat_id = message.chat.id
+    recipient_id = str(message.chat.id)
 
     if message.text is not None:
         return InboundMessage(
             update_id=update.update_id,
-            chat_id=chat_id,
+            recipient_id=recipient_id,
             phone_number=None,
             message_type=MessageType.text,
             text=message.text,
@@ -30,7 +30,7 @@ def parse_update(update: TelegramUpdate) -> InboundMessage | None:
     if message.voice is not None:
         return InboundMessage(
             update_id=update.update_id,
-            chat_id=chat_id,
+            recipient_id=recipient_id,
             phone_number=None,
             message_type=MessageType.voice,
             text=message.caption,
@@ -41,7 +41,7 @@ def parse_update(update: TelegramUpdate) -> InboundMessage | None:
         # Telegram sends multiple sizes; take the largest (last)
         return InboundMessage(
             update_id=update.update_id,
-            chat_id=chat_id,
+            recipient_id=recipient_id,
             phone_number=None,
             message_type=MessageType.photo,
             text=message.caption,
@@ -51,7 +51,7 @@ def parse_update(update: TelegramUpdate) -> InboundMessage | None:
     if message.document is not None:
         return InboundMessage(
             update_id=update.update_id,
-            chat_id=chat_id,
+            recipient_id=recipient_id,
             phone_number=None,
             message_type=MessageType.document,
             text=message.caption,
@@ -72,7 +72,7 @@ def parse_update(update: TelegramUpdate) -> InboundMessage | None:
 
         return InboundMessage(
             update_id=update.update_id,
-            chat_id=chat_id,
+            recipient_id=recipient_id,
             phone_number=contact.phone_number,
             message_type=MessageType.contact,
             text=text,
@@ -86,7 +86,7 @@ def parse_update(update: TelegramUpdate) -> InboundMessage | None:
     )
     return InboundMessage(
         update_id=update.update_id,
-        chat_id=chat_id,
+        recipient_id=recipient_id,
         phone_number=None,
         message_type=MessageType.unknown,
         text=None,

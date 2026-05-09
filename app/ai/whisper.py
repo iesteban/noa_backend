@@ -33,9 +33,9 @@ async def _resolve_telegram_file_url(file_id: str) -> str:
     return f"https://api.telegram.org/file/bot{settings.telegram_bot_token}/{file_path}"
 
 
-async def _download(url: str) -> bytes:
+async def _download(url: str, auth: tuple[str, str] | None = None) -> bytes:
     async with httpx.AsyncClient() as client:
-        r = await client.get(url)
+        r = await client.get(url, auth=auth)
         r.raise_for_status()
         return r.content
 
@@ -56,3 +56,22 @@ async def transcribe(file_id: str) -> tuple[str, str]:
     )
     logger.info("Whisper transcribed %d bytes: %r", len(audio_bytes), response.text[:80])
     return response.text, voice_url
+
+
+async def transcribe_from_url(
+    url: str,
+    auth: tuple[str, str] | None = None,
+) -> tuple[str, str]:
+    """Download audio from a direct URL and transcribe with Whisper.
+
+    Used for WhatsApp voice notes (Twilio media URLs require Basic Auth).
+    Returns (transcription_text, url).
+    """
+    audio_bytes = await _download(url, auth=auth)
+    response = await _get_openai().audio.transcriptions.create(
+        model="whisper-1",
+        file=("voice.ogg", io.BytesIO(audio_bytes)),
+        language="es",
+    )
+    logger.info("Whisper transcribed %d bytes: %r", len(audio_bytes), response.text[:80])
+    return response.text, url

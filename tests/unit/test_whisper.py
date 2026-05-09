@@ -133,7 +133,7 @@ class TestDispatchVoiceFallback:
     def _voice_inbound(self) -> InboundMessage:
         return InboundMessage(
             update_id=1,
-            chat_id=111,
+            recipient_id="111",
             phone_number=None,
             message_type=MessageType.voice,
             text=None,

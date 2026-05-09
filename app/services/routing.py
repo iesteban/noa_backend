@@ -22,7 +22,7 @@ class RoutingResult:
 
 async def resolve_routing(
     db: AsyncSession,
-    telegram_chat_id: int,
+    telegram_chat_id: str | None = None,
     phone_number: str | None = None,
 ) -> RoutingResult:
     """Determine who is sending this message and in which mode.
@@ -34,10 +34,13 @@ async def resolve_routing(
     4. phone_number matches N Clients → disambiguation needed
     5. No match → unknown user
     """
-    row = await db.execute(
-        select(Contractor).where(Contractor.telegram_chat_id == str(telegram_chat_id))
-    )
-    contractor = row.scalar_one_or_none()
+    if telegram_chat_id is not None:
+        row = await db.execute(
+            select(Contractor).where(Contractor.telegram_chat_id == telegram_chat_id)
+        )
+        contractor = row.scalar_one_or_none()
+    else:
+        contractor = None
     if contractor is not None:
         return RoutingResult(
             user_type=UserType.contractor,
