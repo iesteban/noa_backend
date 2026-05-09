@@ -6,6 +6,10 @@ terraform {
       source  = "scaleway/scaleway"
       version = "~> 2.43"
     }
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
+      version = "~> 4.0"
+    }
     dns = {
       source  = "hashicorp/dns"
       version = "~> 3.4"
@@ -36,6 +40,10 @@ terraform {
 provider "scaleway" {
   zone   = var.zone
   region = var.region
+}
+
+provider "cloudflare" {
+  api_token = var.cloudflare_api_token
 }
 
 provider "dns" {}

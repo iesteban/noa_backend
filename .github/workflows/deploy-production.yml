@@ -80,8 +80,22 @@ jobs:
           TF_VAR_google_client_secret: ${{ secrets.PRODUCTION_GOOGLE_CLIENT_SECRET }}
           TF_VAR_google_redirect_uri: ${{ secrets.PRODUCTION_GOOGLE_REDIRECT_URI }}
           TF_VAR_sentry_dsn: ${{ secrets.PRODUCTION_SENTRY_DSN }}
+          TF_VAR_cloudflare_api_token: ${{ secrets.PRODUCTION_CLOUDFLARE_API_TOKEN }}
+          TF_VAR_cloudflare_zone_id: ${{ secrets.PRODUCTION_CLOUDFLARE_ZONE_ID }}
         run: |
           terraform apply -auto-approve \
             -target=scaleway_container.api \
             -var-file=terraform.tfvars.production \
             -var "image_tag=${{ steps.sha.outputs.value }}"
+
+      - name: Check for landing page changes
+        id: landing
+        run: |
+          changed=$(git diff --name-only HEAD~1 HEAD -- landing/ | wc -l)
+          echo "changed=$changed" >> $GITHUB_OUTPUT
+
+      - name: Deploy landing page
+        if: steps.landing.outputs.changed != '0'
+        run: |
+          pip install boto3 -q
+          REPO_ROOT=$PWD ./infra/scripts/deploy_landing.sh

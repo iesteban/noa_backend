@@ -27,3 +27,10 @@ enable_lb = true
 # Optional: leave empty to use the Scaleway container URL
 api_domain = ""
 # api_domain = "api.noa.app"
+
+# Cloudflare — required for DNS management of botnoa.com
+# API token: Cloudflare dashboard → My Profile → API Tokens → Create Token
+#   → "Edit zone DNS" template → scope to botnoa.com zone
+# Zone ID: Cloudflare dashboard → botnoa.com → right sidebar → Zone ID
+cloudflare_api_token = "CHANGE_ME"
+cloudflare_zone_id   = "CHANGE_ME"

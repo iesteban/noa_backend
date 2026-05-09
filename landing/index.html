@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Noa — Tu asistente para autónomos</title>
+  <meta name="description" content="Noa gestiona tus facturas, citas y clientes por WhatsApp y Telegram. Sin apps, sin complicaciones." />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --brand:   #2563eb;
+      --brand-d: #1d4ed8;
+      --text:    #111827;
+      --muted:   #6b7280;
+      --bg:      #f9fafb;
+      --white:   #ffffff;
+      --radius:  12px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: var(--text);
+      background: var(--white);
+      line-height: 1.6;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid #e5e7eb;
+      padding: 0 1.5rem;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      font-weight: 700;
+      font-size: 1.25rem;
+      color: var(--brand);
+      text-decoration: none;
+      letter-spacing: -0.02em;
+    }
+
+    nav a.cta-nav {
+      background: var(--brand);
+      color: var(--white);
+      padding: 0.4rem 1rem;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 600;
+      transition: background 0.15s;
+    }
+    nav a.cta-nav:hover { background: var(--brand-d); }
+
+    /* ── Hero ── */
+    .hero {
+      padding: 6rem 1.5rem 5rem;
+      text-align: center;
+      background: linear-gradient(160deg, #eff6ff 0%, var(--white) 60%);
+    }
+
+    .hero-badge {
+      display: inline-block;
+      background: #dbeafe;
+      color: var(--brand);
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.3rem 0.8rem;
+      border-radius: 999px;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      max-width: 720px;
+      margin: 0 auto 1.25rem;
+    }
+
+    .hero h1 span { color: var(--brand); }
+
+    .hero p {
+      font-size: clamp(1rem, 2vw, 1.2rem);
+      color: var(--muted);
+      max-width: 520px;
+      margin: 0 auto 2.5rem;
+    }
+
+    .hero-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--brand);
+      color: var(--white);
+      padding: 0.85rem 2rem;
+      border-radius: 10px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 1.05rem;
+      transition: background 0.15s, transform 0.1s;
+      box-shadow: 0 4px 14px rgba(37,99,235,0.3);
+    }
+    .hero-cta:hover { background: var(--brand-d); transform: translateY(-1px); }
+
+    .hero-sub {
+      margin-top: 1rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    /* ── Channels ── */
+    .channels {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-top: 2.5rem;
+      flex-wrap: wrap;
+    }
+
+    .channel-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 999px;
+      padding: 0.4rem 1rem;
+      font-size: 0.875rem;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .channel-pill svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+    /* ── Features ── */
+    .features {
+      padding: 5rem 1.5rem;
+      background: var(--bg);
+    }
+
+    .section-label {
+      text-align: center;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--brand);
+      margin-bottom: 0.75rem;
+    }
+
+    .section-title {
+      text-align: center;
+      font-size: clamp(1.5rem, 3vw, 2.25rem);
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      margin-bottom: 0.75rem;
+    }
+
+    .section-sub {
+      text-align: center;
+      color: var(--muted);
+      max-width: 480px;
+      margin: 0 auto 3rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.5rem;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: var(--white);
+      border: 1px solid #e5e7eb;
+      border-radius: var(--radius);
+      padding: 1.75rem;
+    }
+
+    .card-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      background: #eff6ff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1rem;
+      font-size: 1.3rem;
+    }
+
+    .card h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+    }
+
+    .card p { color: var(--muted); font-size: 0.925rem; }
+
+    /* ── How it works ── */
+    .how {
+      padding: 5rem 1.5rem;
+    }
+
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .step {
+      display: flex;
+      gap: 1.25rem;
+      align-items: flex-start;
+    }
+
+    .step-num {
+      flex-shrink: 0;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--brand);
+      color: var(--white);
+      font-weight: 700;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .step h4 { font-weight: 700; margin-bottom: 0.25rem; }
+    .step p  { color: var(--muted); font-size: 0.925rem; }
+
+    /* ── CTA banner ── */
+    .cta-banner {
+      background: var(--brand);
+      color: var(--white);
+      text-align: center;
+      padding: 4.5rem 1.5rem;
+    }
+
+    .cta-banner h2 {
+      font-size: clamp(1.5rem, 3vw, 2.25rem);
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      margin-bottom: 0.75rem;
+    }
+
+    .cta-banner p {
+      opacity: 0.85;
+      max-width: 440px;
+      margin: 0 auto 2rem;
+    }
+
+    .cta-banner a {
+      display: inline-block;
+      background: var(--white);
+      color: var(--brand);
+      padding: 0.85rem 2rem;
+      border-radius: 10px;
+      font-weight: 700;
+      text-decoration: none;
+      font-size: 1rem;
+      transition: opacity 0.15s;
+    }
+    .cta-banner a:hover { opacity: 0.9; }
+
+    /* ── Footer ── */
+    footer {
+      padding: 2rem 1.5rem;
+      border-top: 1px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    footer .logo { font-size: 1rem; }
+
+    footer nav { display: flex; gap: 1.5rem; }
+
+    footer nav a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.875rem;
+    }
+    footer nav a:hover { color: var(--text); }
+
+    footer p {
+      color: var(--muted);
+      font-size: 0.8rem;
+      width: 100%;
+      text-align: center;
+      margin-top: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <a class="logo" href="/">Noa</a>
+  <a class="cta-nav" href="#contacto">Solicitar acceso</a>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-badge">Para autónomos en España</div>
+  <h1>Gestiona tu negocio<br /><span>por WhatsApp y Telegram</span></h1>
+  <p>Noa es tu asistente de IA que crea facturas, gestiona tu agenda y se comunica con tus clientes — todo desde el chat, sin instalar nada.</p>
+  <a class="hero-cta" href="#contacto">
+    Solicitar acceso anticipado
+  </a>
+  <p class="hero-sub">Acceso gratuito durante el beta · Sin tarjeta de crédito</p>
+
+  <div class="channels">
+    <div class="channel-pill">
+      <!-- WhatsApp icon -->
+      <svg viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      WhatsApp
+    </div>
+    <div class="channel-pill">
+      <!-- Telegram icon -->
+      <svg viewBox="0 0 24 24" fill="#229ED9"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.96 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.244-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+      Telegram
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="features" id="funciones">
+  <p class="section-label">Funcionalidades</p>
+  <h2 class="section-title">Todo lo que necesitas, en un chat</h2>
+  <p class="section-sub">Noa entiende lo que le pides en lenguaje natural — por voz o texto — y lo hace por ti.</p>
+
+  <div class="grid">
+    <div class="card">
+      <div class="card-icon">🧾</div>
+      <h3>Facturas al instante</h3>
+      <p>Crea, envía y registra facturas conformes con el SII. IVA e IRPF calculados automáticamente.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">📅</div>
+      <h3>Agenda integrada</h3>
+      <p>Gestiona citas y disponibilidad directamente desde el chat, sincronizado con Google Calendar.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">👥</div>
+      <h3>Gestión de clientes</h3>
+      <p>Busca clientes, consulta su historial y comunícate con ellos — todo sin salir de WhatsApp.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🎙️</div>
+      <h3>Por voz o texto</h3>
+      <p>Manda un audio diciendo «factura a Ana por 500 euros» y Noa se encarga del resto.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">📄</div>
+      <h3>Presupuestos en PDF</h3>
+      <p>Genera y envía presupuestos profesionales en segundos, listos para firmar.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🔒</div>
+      <h3>Tus datos, seguros</h3>
+      <p>Cada autónomo tiene su espacio aislado. Nunca compartimos datos entre clientes.</p>
+    </div>
+  </div>
+</section>
+
+<!-- How it works -->
+<section class="how" id="como-funciona">
+  <p class="section-label">Cómo funciona</p>
+  <h2 class="section-title" style="text-align:center; margin-bottom:0.75rem;">En tres pasos</h2>
+  <p class="section-sub" style="margin-bottom:2.5rem;">Sin apps que instalar. Sin contraseñas que recordar.</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div>
+        <h4>Te damos acceso</h4>
+        <p>Te añadimos a Noa en WhatsApp o Telegram. Configuras tus datos fiscales en un par de minutos.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div>
+        <h4>Habla con Noa como hablarías con un asistente</h4>
+        <p>«Crea una factura para Juan por la instalación de ayer, 320 euros» — por texto o por voz.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div>
+        <h4>Noa lo gestiona todo</h4>
+        <p>La factura se genera, se registra y se envía. Tú recibes la confirmación y sigues con tu trabajo.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-banner" id="contacto">
+  <h2>Empieza gratis durante el beta</h2>
+  <p>Estamos incorporando autónomos de forma gradual. Apúntate y te avisamos cuando te toque.</p>
+  <a href="mailto:hola@botnoa.com?subject=Quiero%20acceso%20a%20Noa">Solicitar acceso</a>
+</section>
+
+<!-- Footer -->
+<footer>
+  <a class="logo" href="/">Noa</a>
+  <nav>
+    <a href="/privacy.html">Política de privacidad</a>
+  </nav>
+  <p>© 2026 Noa · Hecho en España</p>
+</footer>
+
+</body>
+</html>
