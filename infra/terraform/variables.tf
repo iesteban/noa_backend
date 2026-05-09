@@ -97,6 +97,33 @@ variable "sentry_dsn" {
   default     = ""
 }
 
+variable "twilio_account_sid" {
+  description = "Twilio account SID (ACxxxxxxxx)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "twilio_api_key_sid" {
+  description = "Twilio API key SID (SKxxxxxxxx)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "twilio_client_secret" {
+  description = "Twilio API key client secret"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "twilio_whatsapp_from" {
+  description = "Twilio WhatsApp sender number in E.164 format"
+  type        = string
+  default     = ""
+}
+
 # --- Optional: load balancer ---
 
 variable "cloudflare_api_token" {

@@ -32,10 +32,11 @@ resource "scaleway_container" "api" {
   http_option = "enabled"
 
   environment_variables = {
-    ENVIRONMENT = var.environment
-    LOG_LEVEL   = "INFO"
-    SCW_REGION  = var.region
-    SCW_BUCKET  = scaleway_object_bucket.app.name
+    ENVIRONMENT          = var.environment
+    LOG_LEVEL            = "INFO"
+    SCW_REGION           = var.region
+    SCW_BUCKET           = scaleway_object_bucket.app.name
+    TWILIO_WHATSAPP_FROM = var.twilio_whatsapp_from
   }
 
   secret_environment_variables = {
@@ -50,6 +51,9 @@ resource "scaleway_container" "api" {
     GOOGLE_CLIENT_SECRET    = var.google_client_secret
     GOOGLE_REDIRECT_URI     = var.google_redirect_uri
     SENTRY_DSN              = var.sentry_dsn
+    TWILIO_ACCOUNT_SID      = var.twilio_account_sid
+    TWILIO_API_KEY_SID      = var.twilio_api_key_sid
+    TWILIO_CLIENT_SECRET    = var.twilio_client_secret
   }
 
   depends_on = [

@@ -41,10 +41,10 @@ class TestParseTextMessage:
         assert result is not None
         assert result.text == "Hola Noa"
 
-    def test_chat_id(self) -> None:
+    def test_recipient_id(self) -> None:
         result = parse_update(_update(_msg(text="Hi")))
         assert result is not None
-        assert result.chat_id == 111
+        assert result.recipient_id == "111"
 
     def test_no_file_id(self) -> None:
         result = parse_update(_update(_msg(text="Hi")))
@@ -224,14 +224,14 @@ class TestParseUnhandledTypes:
         assert result.text == "edited"
 
 
-class TestUpdateIdAndChatId:
+class TestUpdateIdAndRecipientId:
     def test_update_id_propagated(self) -> None:
         update = TelegramUpdate(update_id=42, message=_msg(text="hi"))
         result = parse_update(update)
         assert result is not None
         assert result.update_id == 42
 
-    def test_chat_id_propagated(self) -> None:
+    def test_recipient_id_propagated(self) -> None:
         msg = TelegramMessage(
             message_id=1,
             chat=TelegramChat(id=555, type="private"),
@@ -240,7 +240,7 @@ class TestUpdateIdAndChatId:
         )
         result = parse_update(TelegramUpdate(update_id=1, message=msg))
         assert result is not None
-        assert result.chat_id == 555
+        assert result.recipient_id == "555"
 
 
 class TestTelegramUpdateParsing:

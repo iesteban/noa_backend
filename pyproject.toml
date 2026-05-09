@@ -24,6 +24,7 @@ dependencies = [
     "google-api-python-client>=2.0",
     "google-auth-oauthlib>=1.2",
     "sentry-sdk[fastapi]>=2.0",
+    "twilio>=9.0",
 ]
 
 [project.optional-dependencies]

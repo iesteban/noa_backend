@@ -113,7 +113,7 @@ async def google_callback(
     if contractor and contractor.telegram_chat_id:
         try:
             await send_message(
-                int(contractor.telegram_chat_id),
+                contractor.telegram_chat_id,
                 "✅ Google Calendar conectado. Ya puedo gestionar tu agenda.",
             )
         except Exception:
