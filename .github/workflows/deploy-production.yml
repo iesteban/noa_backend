@@ -103,14 +103,3 @@ jobs:
           export DATABASE_URL=$(cd infra/terraform && terraform output -raw database_url)
           alembic upgrade head
 
-      - name: Check for landing page changes
-        id: landing
-        run: |
-          changed=$(git diff --name-only HEAD~1 HEAD -- landing/ | wc -l)
-          echo "changed=$changed" >> $GITHUB_OUTPUT
-
-      - name: Deploy landing page
-        if: steps.landing.outputs.changed != '0'
-        run: |
-          pip install boto3 -q
-          REPO_ROOT=$PWD ./infra/scripts/deploy_landing.sh
