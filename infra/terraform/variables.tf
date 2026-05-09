@@ -99,6 +99,17 @@ variable "sentry_dsn" {
 
 # --- Optional: load balancer ---
 
+variable "cloudflare_api_token" {
+  description = "Cloudflare API token — Zone:DNS:Edit permission for botnoa.com"
+  type        = string
+  sensitive   = true
+}
+
+variable "cloudflare_zone_id" {
+  description = "Cloudflare Zone ID for botnoa.com (Cloudflare dashboard → right sidebar)"
+  type        = string
+}
+
 variable "enable_lb" {
   description = "Whether to deploy a load balancer (static IP, custom domain). Disable in dev to save ~€15/month."
   type        = bool

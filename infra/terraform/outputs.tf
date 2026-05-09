@@ -40,6 +40,6 @@ output "database_url" {
 }
 
 output "landing_url" {
-  description = "Scaleway static website URL for the landing page"
-  value       = "https://${scaleway_object_bucket.www.name}.s3-website.${var.region}.scw.cloud"
+  description = "Landing page URL (served via Cloudflare → Scaleway)"
+  value       = "https://botnoa.com"
 }
