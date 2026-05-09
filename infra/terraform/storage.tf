@@ -41,14 +41,11 @@ resource "scaleway_iam_api_key" "api" {
 
 # Landing page bucket — public static website, not environment-scoped.
 # Only apply this with the production tfvars.
+# Website hosting (index/error document) is configured by deploy_landing.sh
+# via `aws s3api put-bucket-website`, which the Scaleway provider doesn't expose.
 resource "scaleway_object_bucket" "www" {
   name   = "noa-www"
   region = var.region
-
-  website {
-    index_document = "index.html"
-    error_document = "404.html"
-  }
 }
 
 resource "scaleway_object_bucket_acl" "www" {

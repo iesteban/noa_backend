@@ -40,6 +40,11 @@ output "database_url" {
 }
 
 output "landing_url" {
-  description = "Landing page URL (served via Cloudflare → Scaleway)"
+  description = "Landing page URL"
   value       = "https://botnoa.com"
+}
+
+output "edge_services_fqdn" {
+  description = "Scaleway Edge Services hostname (CNAME target for botnoa.com)"
+  value       = scaleway_edge_services_dns_stage.landing.default_fqdn
 }
