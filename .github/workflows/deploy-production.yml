@@ -93,6 +93,11 @@ jobs:
           python-version: "3.12"
 
       - name: Run migrations (production)
+        env:
+          TELEGRAM_BOT_TOKEN: dummy
+          TELEGRAM_WEBHOOK_SECRET: dummy
+          ANTHROPIC_API_KEY: dummy
+          OPENAI_API_KEY: dummy
         run: |
           pip install -e . -q
           export DATABASE_URL=$(cd infra/terraform && terraform output -raw database_url)
