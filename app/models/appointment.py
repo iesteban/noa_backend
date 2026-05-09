@@ -78,6 +78,8 @@ class CalendarToken(PrimaryKeyMixin, TimestampMixin, Base):
     )
     # OAuth state UUID — used to match the callback to the pending token.
     state: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
+    # PKCE code_verifier generated at /connect, consumed at /callback.
+    code_verifier: Mapped[str | None] = mapped_column(String(128), nullable=True)
     access_token: Mapped[str | None] = mapped_column(Text, nullable=True)
     refresh_token: Mapped[str | None] = mapped_column(Text, nullable=True)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
