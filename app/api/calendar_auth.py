@@ -142,24 +142,14 @@ _SUCCESS_HTML = """<!DOCTYPE html>
       line-height: 1.6;
       margin-bottom: 32px;
     }
-    .btn {
-      display: inline-block;
-      background: var(--brand);
-      color: #fff;
-      font-size: 15px;
-      font-weight: 500;
-      padding: 12px 28px;
-      border-radius: 8px;
-      text-decoration: none;
-    }
-  </style>
+</style>
 </head>
 <body>
   <div class="card">
     <div class="check">✓</div>
     <h1>¡Calendario conectado!</h1>
     <p>Google Calendar está vinculado a tu cuenta de Noa.<br>Ya puedo ver y gestionar tu agenda.</p>
-    {cta}
+    <p style="color:var(--muted);font-size:13px">Puedes cerrar esta pestaña y volver a Telegram.</p>
   </div>
 </body>
 </html>"""
@@ -204,9 +194,4 @@ async def google_callback(
         except Exception:
             logger.warning("Could not notify contractor %s after calendar connect", contractor.id)
 
-    cta = (
-        f'<a class="btn" href="https://t.me/{settings.telegram_bot_username}">Volver a Telegram</a>'
-        if settings.telegram_bot_username
-        else '<p style="color:var(--muted);font-size:13px">Puedes cerrar esta pestaña.</p>'
-    )
-    return HTMLResponse(_SUCCESS_HTML.format(cta=cta))
+    return HTMLResponse(_SUCCESS_HTML)

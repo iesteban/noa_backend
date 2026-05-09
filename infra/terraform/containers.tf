@@ -44,7 +44,6 @@ resource "scaleway_container" "api" {
     ANTHROPIC_API_KEY       = var.anthropic_api_key
     TELEGRAM_BOT_TOKEN      = var.telegram_bot_token
     TELEGRAM_WEBHOOK_SECRET = var.telegram_webhook_secret
-    TELEGRAM_BOT_USERNAME   = var.telegram_bot_username
     OPENAI_API_KEY          = var.openai_api_key
     SCW_ACCESS_KEY          = scaleway_iam_api_key.api.access_key
     SCW_SECRET_KEY          = scaleway_iam_api_key.api.secret_key
