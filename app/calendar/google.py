@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-_SCOPES = ["https://www.googleapis.com/auth/calendar"]
+_SCOPES = ["https://www.googleapis.com/auth/calendar.events"]
 
 
 class GoogleCalendarProvider:

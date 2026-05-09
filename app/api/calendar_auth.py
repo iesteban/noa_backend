@@ -20,7 +20,7 @@ from app.models.contractor import Contractor
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth/google", tags=["calendar-auth"])
 
-_SCOPES = ["https://www.googleapis.com/auth/calendar"]
+_SCOPES = ["https://www.googleapis.com/auth/calendar.events"]
 
 
 def _make_flow() -> Any:
