@@ -89,14 +89,14 @@ class TestSignatureValidation:
     def test_missing_signature_returns_403(self) -> None:
         plain_client = TestClient(app)
         with patch("app.api.webhook.settings") as mock_settings:
-            mock_settings.twilio_auth_token = "test-token"
+            mock_settings.twilio_client_secret = "test-token"
             response = plain_client.post("/whatsapp", data=_form())
         assert response.status_code == 403
 
     def test_wrong_signature_returns_403(self) -> None:
         plain_client = TestClient(app)
         with patch("app.api.webhook.settings") as mock_settings:
-            mock_settings.twilio_auth_token = "test-token"
+            mock_settings.twilio_client_secret = "test-token"
             response = plain_client.post(
                 "/whatsapp",
                 data=_form(),
