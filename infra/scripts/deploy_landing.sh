@@ -17,7 +17,7 @@ if [[ -z "${SCW_ACCESS_KEY:-}" || -z "${SCW_SECRET_KEY:-}" ]]; then
   exit 1
 fi
 
-REPO_ROOT="$REPO_ROOT" "$REPO_ROOT/.venv/bin/python" - <<'PYEOF'
+REPO_ROOT="$REPO_ROOT" python3 - <<'PYEOF'
 import os, mimetypes, pathlib, boto3
 
 BUCKET   = "noa-www"
