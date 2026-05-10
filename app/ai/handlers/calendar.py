@@ -12,6 +12,8 @@ from app.ai.dispatcher import register
 from app.calendar.base import CalendarEvent, CalendarProvider
 from app.calendar.google import GoogleCalendarProvider
 from app.config import settings
+from app.messaging.telegram_sender import send_message as telegram_send
+from app.messaging.whatsapp_sender import send_message as whatsapp_send
 from app.models.appointment import (
     Appointment,
     AppointmentStatus,
@@ -19,6 +21,7 @@ from app.models.appointment import (
     CalendarProviderEnum,
     CalendarToken,
 )
+from app.models.contractor import Contractor
 from app.models.session import ConversationSession
 
 logger = logging.getLogger(__name__)
@@ -256,3 +259,88 @@ async def handle_create_appointment(
         f" | {duration_minutes} min"
         f"{calendar_note}"
     )
+
+
+@register("cancel_appointment")
+async def handle_cancel_appointment(
+    tool_input: dict[str, Any],
+    db: AsyncSession,
+    session: ConversationSession,
+) -> str:
+    if session.contractor_id is None:
+        return "Session error: contractor not identified."
+
+    try:
+        appointment_id = uuid.UUID(str(tool_input["appointment_id"]))
+    except (KeyError, ValueError):
+        return "appointment_id inválido — debe ser un UUID."
+
+    result = await db.execute(
+        select(Appointment).where(
+            Appointment.id == appointment_id,
+            Appointment.contractor_id == session.contractor_id,
+        )
+    )
+    appointment = result.scalar_one_or_none()
+    if appointment is None:
+        return "Cita no encontrada."
+
+    if appointment.status == AppointmentStatus.cancelled:
+        return "La cita ya estaba cancelada."
+
+    if appointment.status == AppointmentStatus.completed:
+        return "No se puede cancelar una cita ya completada."
+
+    appointment.status = AppointmentStatus.cancelled
+    await db.flush()
+
+    # Remove from Google Calendar if synced.
+    if (
+        appointment.external_calendar_id
+        and appointment.calendar_provider == CalendarProviderEnum.google
+    ):
+        token = await _get_token(db, session.contractor_id)
+        if token is not None:
+            provider = GoogleCalendarProvider(token, db)
+            try:
+                await provider.delete_event(appointment.external_calendar_id)
+            except Exception:
+                logger.exception(
+                    "Google Calendar delete_event failed for appointment %s", appointment.id
+                )
+
+    # Notify client via their most recent session.
+    if appointment.client_id is not None:
+        client_session_result = await db.execute(
+            select(ConversationSession)
+            .where(ConversationSession.client_id == appointment.client_id)
+            .order_by(ConversationSession.last_active_at.desc())
+            .limit(1)
+        )
+        client_session = client_session_result.scalar_one_or_none()
+        if client_session is not None:
+            contractor_result = await db.execute(
+                select(Contractor).where(Contractor.id == session.contractor_id)
+            )
+            contractor = contractor_result.scalar_one_or_none()
+            business_name = (
+                contractor.business_name or contractor.name
+                if contractor
+                else "El profesional"
+            )
+            msg = (
+                f"Tu cita con {business_name} ha sido cancelada. "
+                "Escríbenos para buscar otra fecha."
+            )
+            try:
+                if client_session.channel == "telegram":
+                    await telegram_send(client_session.phone_number, msg)
+                else:
+                    await whatsapp_send(client_session.phone_number, msg)
+            except Exception:
+                logger.exception(
+                    "Failed to notify client %s of cancellation", appointment.client_id
+                )
+
+    starts_str = appointment.starts_at.strftime("%-d %b %Y a las %H:%M")
+    return f"Cita cancelada. {appointment.description} | {starts_str}"

@@ -208,6 +208,23 @@ _CONTRACTOR_TOOL_LIST: list[dict[str, Any]] = [
         },
     },
     {
+        "name": "cancel_appointment",
+        "description": (
+            "Cancel an appointment booked by a client. "
+            "Marks it as cancelled, removes it from Google Calendar, and notifies the client."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "appointment_id": {
+                    "type": "string",
+                    "description": "UUID of the appointment to cancel.",
+                },
+            },
+            "required": ["appointment_id"],
+        },
+    },
+    {
         "name": "send_payment_reminder",
         "description": "Send a payment reminder to a client for an overdue invoice.",
         "input_schema": {

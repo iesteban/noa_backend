@@ -158,7 +158,8 @@ async def handle_book_appointment(
         client_name = client.name if client is not None else "Un cliente"
         await _send_to_contractor(
             contractor,
-            f"Nueva cita: {client_name} — {description} — {starts_str}",
+            f"Nueva cita: {client_name} — {description} — {starts_str}"
+            f" [id={appointment.id}]\nResponde \"No\" para rechazarla.",
         )
 
     return (
