@@ -3,17 +3,20 @@ from __future__ import annotations
 import asyncio
 import logging
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.calendar.base import CalendarEvent
 from app.config import settings
-from app.models.appointment import CalendarToken
+from app.models.appointment import BookedBy, CalendarToken
 
 if TYPE_CHECKING:
     from app.models.appointment import Appointment
+    from app.models.client import Client
+    from app.models.contractor import Contractor
 
 logger = logging.getLogger(__name__)
 
@@ -109,11 +112,28 @@ class GoogleCalendarProvider:
         await self._db.flush()
         return [self._parse_event(item) for item in items]
 
-    async def create_event(self, appointment: Appointment) -> str:
-        from datetime import timedelta
-
+    def _build_event_body(
+        self,
+        appointment: Appointment,
+        client: Client | None,
+        contractor: Contractor | None,
+    ) -> dict[str, Any]:
         ends_at = appointment.starts_at + timedelta(minutes=appointment.duration_minutes)
-        body = {
+
+        desc_lines: list[str] = []
+        if client is not None:
+            desc_lines.append(f"Cliente: {client.name}")
+            desc_lines.append(f"Teléfono: {client.phone_number}")
+            if client.nif:
+                desc_lines.append(f"NIF: {client.nif}")
+            if client.notes:
+                desc_lines.append(f"Notas: {client.notes}")
+        if appointment.booked_by == BookedBy.client:
+            if desc_lines:
+                desc_lines.append("")
+            desc_lines.append("Reservada por el cliente.")
+
+        body: dict[str, Any] = {
             "summary": appointment.description,
             "start": {
                 "dateTime": appointment.starts_at.isoformat(),
@@ -124,26 +144,44 @@ class GoogleCalendarProvider:
                 "timeZone": "Europe/Madrid",
             },
         }
+        if desc_lines:
+            body["description"] = "\n".join(desc_lines)
+        return body
+
+    async def _load_related(
+        self, appointment: Appointment
+    ) -> tuple[Client | None, Contractor | None]:
+        from app.models.client import Client
+        from app.models.contractor import Contractor
+
+        client: Client | None = None
+        contractor: Contractor | None = None
+
+        if appointment.client_id is not None:
+            client_row = await self._db.execute(
+                select(Client).where(Client.id == appointment.client_id)
+            )
+            client = client_row.scalar_one_or_none()
+
+        if appointment.contractor_id is not None:
+            contractor_row = await self._db.execute(
+                select(Contractor).where(Contractor.id == appointment.contractor_id)
+            )
+            contractor = contractor_row.scalar_one_or_none()
+
+        return client, contractor
+
+    async def create_event(self, appointment: Appointment) -> str:
+        client, contractor = await self._load_related(appointment)
+        body = self._build_event_body(appointment, client, contractor)
         loop = asyncio.get_event_loop()
         event_id = await loop.run_in_executor(None, self._sync_create_event, body)
         await self._db.flush()
         return event_id
 
     async def update_event(self, external_id: str, appointment: Appointment) -> None:
-        from datetime import timedelta
-
-        ends_at = appointment.starts_at + timedelta(minutes=appointment.duration_minutes)
-        body = {
-            "summary": appointment.description,
-            "start": {
-                "dateTime": appointment.starts_at.isoformat(),
-                "timeZone": "Europe/Madrid",
-            },
-            "end": {
-                "dateTime": ends_at.isoformat(),
-                "timeZone": "Europe/Madrid",
-            },
-        }
+        client, contractor = await self._load_related(appointment)
+        body = self._build_event_body(appointment, client, contractor)
         loop = asyncio.get_event_loop()
         await loop.run_in_executor(None, self._sync_update_event, external_id, body)
         await self._db.flush()
