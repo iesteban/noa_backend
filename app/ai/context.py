@@ -9,7 +9,16 @@ from sqlalchemy.types import Date as SADate
 from app.config import settings
 from app.models.client import Client
 from app.models.contractor import Contractor
+from app.models.instruction import ContractorInstruction
 from app.models.job import Job
+
+_SCOPE_LABELS: dict[str, str] = {
+    "global": "global",
+    "invoices": "facturas",
+    "budgets": "presupuestos",
+    "reminders": "recordatorios",
+    "appointments": "citas",
+}
 
 _ROSTER_LIMIT = 10
 
@@ -93,5 +102,20 @@ async def build_contractor_context(db: AsyncSession, contractor: Contractor) -> 
             lines.append(f"- {c.name}  id={c.id}  tel={c.phone_number}")
         if not clients_all:
             lines.append("(sin clientes aún)")
+
+    instr_result = await db.execute(
+        select(ContractorInstruction)
+        .where(
+            ContractorInstruction.contractor_id == contractor.id,
+            ContractorInstruction.active.is_(True),
+        )
+        .order_by(ContractorInstruction.created_at)
+    )
+    instructions = list(instr_result.scalars().all())
+    if instructions:
+        lines += ["", "## Instrucciones personales"]
+        for instr in instructions:
+            label = _SCOPE_LABELS.get(instr.scope, instr.scope)
+            lines.append(f"- [{label}] {instr.instruction}  id={instr.id}")
 
     return "\n".join(lines)
