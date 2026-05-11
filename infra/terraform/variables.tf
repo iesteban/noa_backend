@@ -97,30 +97,31 @@ variable "sentry_dsn" {
   default     = ""
 }
 
-variable "twilio_account_sid" {
-  description = "Twilio account SID (ACxxxxxxxx)"
+variable "whatsapp_phone_number_id" {
+  description = "Meta WhatsApp phone number ID"
   type        = string
   sensitive   = true
   default     = ""
 }
 
-variable "twilio_api_key_sid" {
-  description = "Twilio API key SID (SKxxxxxxxx)"
+variable "whatsapp_access_token" {
+  description = "Meta System User access token with whatsapp_business_messaging permission"
   type        = string
   sensitive   = true
   default     = ""
 }
 
-variable "twilio_client_secret" {
-  description = "Twilio API key client secret"
+variable "whatsapp_verify_token" {
+  description = "Webhook verify token set in the Meta App dashboard"
   type        = string
   sensitive   = true
   default     = ""
 }
 
-variable "twilio_whatsapp_from" {
-  description = "Twilio WhatsApp sender number in E.164 format"
+variable "whatsapp_app_secret" {
+  description = "Meta App Secret for validating X-Hub-Signature-256 webhook signatures"
   type        = string
+  sensitive   = true
   default     = ""
 }
 

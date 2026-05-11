@@ -32,28 +32,28 @@ resource "scaleway_container" "api" {
   http_option = "enabled"
 
   environment_variables = {
-    ENVIRONMENT          = var.environment
-    LOG_LEVEL            = "INFO"
-    SCW_REGION           = var.region
-    SCW_BUCKET           = scaleway_object_bucket.app.name
-    TWILIO_WHATSAPP_FROM = var.twilio_whatsapp_from
+    ENVIRONMENT = var.environment
+    LOG_LEVEL   = "INFO"
+    SCW_REGION  = var.region
+    SCW_BUCKET  = scaleway_object_bucket.app.name
   }
 
   secret_environment_variables = {
-    DATABASE_URL            = local.database_url
-    ANTHROPIC_API_KEY       = var.anthropic_api_key
-    TELEGRAM_BOT_TOKEN      = var.telegram_bot_token
-    TELEGRAM_WEBHOOK_SECRET = var.telegram_webhook_secret
-    OPENAI_API_KEY          = var.openai_api_key
-    SCW_ACCESS_KEY          = scaleway_iam_api_key.api.access_key
-    SCW_SECRET_KEY          = scaleway_iam_api_key.api.secret_key
-    GOOGLE_CLIENT_ID        = var.google_client_id
-    GOOGLE_CLIENT_SECRET    = var.google_client_secret
-    GOOGLE_REDIRECT_URI     = var.google_redirect_uri
-    SENTRY_DSN              = var.sentry_dsn
-    TWILIO_ACCOUNT_SID      = var.twilio_account_sid
-    TWILIO_API_KEY_SID      = var.twilio_api_key_sid
-    TWILIO_CLIENT_SECRET    = var.twilio_client_secret
+    DATABASE_URL              = local.database_url
+    ANTHROPIC_API_KEY         = var.anthropic_api_key
+    TELEGRAM_BOT_TOKEN        = var.telegram_bot_token
+    TELEGRAM_WEBHOOK_SECRET   = var.telegram_webhook_secret
+    OPENAI_API_KEY            = var.openai_api_key
+    SCW_ACCESS_KEY            = scaleway_iam_api_key.api.access_key
+    SCW_SECRET_KEY            = scaleway_iam_api_key.api.secret_key
+    GOOGLE_CLIENT_ID          = var.google_client_id
+    GOOGLE_CLIENT_SECRET      = var.google_client_secret
+    GOOGLE_REDIRECT_URI       = var.google_redirect_uri
+    SENTRY_DSN                = var.sentry_dsn
+    WHATSAPP_PHONE_NUMBER_ID  = var.whatsapp_phone_number_id
+    WHATSAPP_ACCESS_TOKEN     = var.whatsapp_access_token
+    WHATSAPP_VERIFY_TOKEN     = var.whatsapp_verify_token
+    WHATSAPP_APP_SECRET       = var.whatsapp_app_secret
   }
 
   depends_on = [

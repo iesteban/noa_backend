@@ -3,13 +3,45 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class TwilioWebhook(BaseModel):
+class MetaTextContent(BaseModel):
+    body: str
+
+
+class MetaMediaContent(BaseModel):
+    id: str
+    mime_type: str
+    caption: str | None = None
+    voice: bool = False
+
+
+class MetaMessage(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
-    message_sid: str = Field(alias="MessageSid")
-    from_number: str = Field(alias="From")   # "whatsapp:+34600123456"
-    to_number: str = Field(alias="To")       # "whatsapp:+14155238886"
-    body: str = Field(default="", alias="Body")
-    num_media: int = Field(default=0, alias="NumMedia")
-    media_url_0: str | None = Field(default=None, alias="MediaUrl0")
-    media_content_type_0: str | None = Field(default=None, alias="MediaContentType0")
+    id: str
+    from_: str = Field(alias="from")
+    timestamp: str
+    type: str
+    text: MetaTextContent | None = None
+    audio: MetaMediaContent | None = None
+    image: MetaMediaContent | None = None
+    document: MetaMediaContent | None = None
+
+
+class MetaValue(BaseModel):
+    messaging_product: str
+    messages: list[MetaMessage] = []
+
+
+class MetaChange(BaseModel):
+    value: MetaValue
+    field: str
+
+
+class MetaEntry(BaseModel):
+    id: str
+    changes: list[MetaChange]
+
+
+class MetaWebhook(BaseModel):
+    object: str
+    entry: list[MetaEntry]

@@ -10,7 +10,8 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-# Module-level client — created once and reused across requests.
+_GRAPH_API = "https://graph.facebook.com/v19.0"
+
 _openai: openai.AsyncOpenAI | None = None
 
 
@@ -33,11 +34,14 @@ async def _resolve_telegram_file_url(file_id: str) -> str:
     return f"https://api.telegram.org/file/bot{settings.telegram_bot_token}/{file_path}"
 
 
-async def _download(url: str, auth: tuple[str, str] | None = None) -> bytes:
-    async with httpx.AsyncClient() as client:
-        r = await client.get(url, auth=auth)
-        r.raise_for_status()
-        return r.content
+async def _transcribe(audio_bytes: bytes) -> str:
+    response = await _get_openai().audio.transcriptions.create(
+        model="whisper-1",
+        file=("voice.ogg", io.BytesIO(audio_bytes)),
+        language="es",
+    )
+    logger.info("Whisper transcribed %d bytes: %r", len(audio_bytes), response.text[:80])
+    return response.text
 
 
 async def transcribe(file_id: str) -> tuple[str, str]:
@@ -47,31 +51,28 @@ async def transcribe(file_id: str) -> tuple[str, str]:
     Raises on network or API failure — caller is responsible for the fallback.
     """
     voice_url = await _resolve_telegram_file_url(file_id)
-    audio_bytes = await _download(voice_url)
-
-    response = await _get_openai().audio.transcriptions.create(
-        model="whisper-1",
-        file=("voice.ogg", io.BytesIO(audio_bytes)),
-        language="es",
-    )
-    logger.info("Whisper transcribed %d bytes: %r", len(audio_bytes), response.text[:80])
-    return response.text, voice_url
+    async with httpx.AsyncClient() as client:
+        r = await client.get(voice_url)
+        r.raise_for_status()
+        audio_bytes = r.content
+    return await _transcribe(audio_bytes), voice_url
 
 
-async def transcribe_from_url(
-    url: str,
-    auth: tuple[str, str] | None = None,
-) -> tuple[str, str]:
-    """Download audio from a direct URL and transcribe with Whisper.
+async def transcribe_from_meta(media_id: str) -> tuple[str, str]:
+    """Resolve a Meta media ID, download the audio, and transcribe with Whisper.
 
-    Used for WhatsApp voice notes (Twilio media URLs require Basic Auth).
-    Returns (transcription_text, url).
+    Meta requires two steps: fetch the media URL first, then download with Bearer auth.
+    Returns (transcription_text, media_url).
+    Raises on network or API failure — caller is responsible for the fallback.
     """
-    audio_bytes = await _download(url, auth=auth)
-    response = await _get_openai().audio.transcriptions.create(
-        model="whisper-1",
-        file=("voice.ogg", io.BytesIO(audio_bytes)),
-        language="es",
-    )
-    logger.info("Whisper transcribed %d bytes: %r", len(audio_bytes), response.text[:80])
-    return response.text, url
+    headers = {"Authorization": f"Bearer {settings.whatsapp_access_token}"}
+    async with httpx.AsyncClient() as client:
+        r = await client.get(f"{_GRAPH_API}/{media_id}", headers=headers)
+        r.raise_for_status()
+        media_url: str = r.json()["url"]
+
+        r = await client.get(media_url, headers=headers)
+        r.raise_for_status()
+        audio_bytes = r.content
+
+    return await _transcribe(audio_bytes), media_url
