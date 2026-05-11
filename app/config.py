@@ -28,10 +28,10 @@ class Settings(BaseSettings):
     google_redirect_uri: str = "http://localhost:8000/auth/google/callback"
     sentry_dsn: str = ""
     feature_hybrid_client_roster: bool = True
-    twilio_account_sid: str = ""
-    twilio_api_key_sid: str = ""  # API Key SID, e.g. "SKxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-    twilio_client_secret: str = ""  # Client Secret shown once at API key creation
-    twilio_whatsapp_from: str = ""  # E.164, e.g. "+14155238886"
+    whatsapp_phone_number_id: str = ""
+    whatsapp_access_token: str = ""
+    whatsapp_verify_token: str = ""
+    whatsapp_app_secret: str = ""  # used to validate X-Hub-Signature-256; optional but recommended
 
 
 settings = Settings()  # type: ignore[call-arg]

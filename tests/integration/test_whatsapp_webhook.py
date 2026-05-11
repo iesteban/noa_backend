@@ -1,8 +1,6 @@
-"""Integration tests for the WhatsApp webhook endpoint.
+"""Integration tests for the WhatsApp (Meta) webhook endpoint.
 
-Twilio signature validation is bypassed via FastAPI dependency override so tests
-don't need real Twilio credentials or a live request URL.
-
+Signature validation is skipped when WHATSAPP_APP_SECRET is empty (the default in tests).
 HTTP-level tests mock _handle_whatsapp_update to avoid event-loop conflicts from
 _dispatch's internal async_session_factory; routing and session logic is exercised
 in test_routing.py and test_onboarding.py via the db fixture.
@@ -14,71 +12,147 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from fastapi.testclient import TestClient
 
-from app.api.webhook import _validate_twilio_signature
 from app.main import app
 
-# ---------------------------------------------------------------------------
-# Fixtures
-# ---------------------------------------------------------------------------
 
 @pytest.fixture
 def client() -> TestClient:
-    """TestClient with Twilio signature validation disabled."""
-    app.dependency_overrides[_validate_twilio_signature] = lambda: None
-    yield TestClient(app)
-    app.dependency_overrides.clear()
+    return TestClient(app)
 
 
-def _form(from_number: str = "+34600000001", body: str = "Hola", **extra: str) -> dict[str, str]:
+def _payload(
+    from_number: str = "34600000001",
+    body: str = "Hola",
+    msg_type: str = "text",
+    media_id: str | None = None,
+) -> dict:
+    message: dict = {
+        "from": from_number,
+        "id": "wamid.abc123",
+        "timestamp": "1700000000",
+        "type": msg_type,
+    }
+    if msg_type == "text":
+        message["text"] = {"body": body}
+    elif msg_type == "audio":
+        message["audio"] = {
+                "id": media_id or "media-id-1", "mime_type": "audio/ogg; codecs=opus", "voice": True
+            }
+    elif msg_type == "image":
+        message["image"] = {"id": media_id or "media-id-2", "mime_type": "image/jpeg"}
+
     return {
-        "MessageSid": "SM" + "a" * 32,
-        "From": f"whatsapp:{from_number}",
-        "To": "whatsapp:+14155238886",
-        "Body": body,
-        "NumMedia": "0",
-        **extra,
+        "object": "whatsapp_business_account",
+        "entry": [{
+            "id": "waba-id",
+            "changes": [{
+                "value": {
+                    "messaging_product": "whatsapp",
+                    "messages": [message],
+                },
+                "field": "messages",
+            }],
+        }],
     }
 
 
 # ---------------------------------------------------------------------------
-# HTTP-level checks
+# Webhook verification (GET)
+# ---------------------------------------------------------------------------
+
+class TestWebhookVerification:
+    def test_valid_verify_token_returns_challenge(self, client: TestClient) -> None:
+        with patch("app.api.webhook.settings") as mock_settings:
+            mock_settings.whatsapp_verify_token = "my-verify-token"
+            response = client.get(
+                "/whatsapp",
+                params={
+                    "hub.mode": "subscribe",
+                    "hub.verify_token": "my-verify-token",
+                    "hub.challenge": "1234567890",
+                },
+            )
+        assert response.status_code == 200
+        assert response.text == "1234567890"
+
+    def test_wrong_verify_token_returns_403(self, client: TestClient) -> None:
+        with patch("app.api.webhook.settings") as mock_settings:
+            mock_settings.whatsapp_verify_token = "correct-token"
+            response = client.get(
+                "/whatsapp",
+                params={
+                    "hub.mode": "subscribe",
+                    "hub.verify_token": "wrong-token",
+                    "hub.challenge": "abc",
+                },
+            )
+        assert response.status_code == 403
+
+    def test_wrong_mode_returns_403(self, client: TestClient) -> None:
+        with patch("app.api.webhook.settings") as mock_settings:
+            mock_settings.whatsapp_verify_token = "token"
+            response = client.get(
+                "/whatsapp",
+                params={
+                    "hub.mode": "unsubscribe",
+                    "hub.verify_token": "token",
+                    "hub.challenge": "abc",
+                },
+            )
+        assert response.status_code == 403
+
+
+# ---------------------------------------------------------------------------
+# Message webhook (POST)
 # ---------------------------------------------------------------------------
 
 class TestWebhookHTTP:
     def test_valid_request_returns_200(self, client: TestClient) -> None:
         with patch("app.api.webhook._handle_whatsapp_update", new_callable=AsyncMock):
-            response = client.post("/whatsapp", data=_form())
+            response = client.post("/whatsapp", json=_payload())
         assert response.status_code == 200
 
     def test_response_body_is_ok(self, client: TestClient) -> None:
         with patch("app.api.webhook._handle_whatsapp_update", new_callable=AsyncMock):
-            response = client.post("/whatsapp", data=_form())
+            response = client.post("/whatsapp", json=_payload())
         assert response.json() == {"ok": "true"}
 
-    def test_handle_whatsapp_update_called_for_text(self, client: TestClient) -> None:
+    def test_handle_called_for_text(self, client: TestClient) -> None:
         with patch("app.api.webhook._handle_whatsapp_update") as mock_handle:
-            client.post("/whatsapp", data=_form(body="Necesito una factura"))
+            client.post("/whatsapp", json=_payload(body="Necesito una factura"))
             mock_handle.assert_called_once()
 
-    def test_handle_whatsapp_update_called_for_voice(self, client: TestClient) -> None:
+    def test_handle_called_for_voice(self, client: TestClient) -> None:
         with patch("app.api.webhook._handle_whatsapp_update") as mock_handle:
-            client.post(
-                "/whatsapp",
-                data=_form(
-                    body="",
-                    NumMedia="1",
-                    MediaUrl0="https://api.twilio.com/v1/voice.ogg",
-                    MediaContentType0="audio/ogg",
-                ),
-            )
+            client.post("/whatsapp", json=_payload(msg_type="audio", media_id="some-media-id"))
             mock_handle.assert_called_once()
 
     def test_webhook_parses_from_number(self, client: TestClient) -> None:
-        """The TwilioWebhook passed to _handle_whatsapp_update has the correct From."""
         with patch("app.api.webhook._handle_whatsapp_update") as mock_handle:
-            client.post("/whatsapp", data=_form(from_number="+34611223344"))
+            client.post("/whatsapp", json=_payload(from_number="34611223344"))
             webhook_arg = mock_handle.call_args[0][0]
-            assert webhook_arg.from_number == "whatsapp:+34611223344"
+            assert webhook_arg.entry[0].changes[0].value.messages[0].from_ == "34611223344"
+
+    def test_status_update_accepted_silently(self, client: TestClient) -> None:
+        status_payload = {
+            "object": "whatsapp_business_account",
+            "entry": [{
+                "id": "waba-id",
+                "changes": [{
+                    "value": {
+                        "messaging_product": "whatsapp",
+                        "statuses": [{
+                            "id": "wamid.xyz", "status": "delivered",
+                            "timestamp": "1700000001", "recipient_id": "34600000001",
+                        }],
+                    },
+                    "field": "messages",
+                }],
+            }],
+        }
+        with patch("app.api.webhook._handle_whatsapp_update", new_callable=AsyncMock):
+            response = client.post("/whatsapp", json=status_payload)
+        assert response.status_code == 200
 
 
 # ---------------------------------------------------------------------------
@@ -86,20 +160,46 @@ class TestWebhookHTTP:
 # ---------------------------------------------------------------------------
 
 class TestSignatureValidation:
-    def test_missing_signature_returns_403(self) -> None:
-        plain_client = TestClient(app)
+    def test_missing_signature_returns_403_when_secret_set(self, client: TestClient) -> None:
         with patch("app.api.webhook.settings") as mock_settings:
-            mock_settings.twilio_client_secret = "test-token"
-            response = plain_client.post("/whatsapp", data=_form())
+            mock_settings.whatsapp_app_secret = "my-app-secret"
+            response = client.post("/whatsapp", json=_payload())
         assert response.status_code == 403
 
-    def test_wrong_signature_returns_403(self) -> None:
-        plain_client = TestClient(app)
+    def test_wrong_signature_returns_403(self, client: TestClient) -> None:
+
+        body = b'{"object":"test"}'
         with patch("app.api.webhook.settings") as mock_settings:
-            mock_settings.twilio_client_secret = "test-token"
-            response = plain_client.post(
+            mock_settings.whatsapp_app_secret = "my-app-secret"
+            response = client.post(
                 "/whatsapp",
-                data=_form(),
-                headers={"X-Twilio-Signature": "bad-signature"},
+                content=body,
+                headers={
+                    "Content-Type": "application/json",
+                    "X-Hub-Signature-256": "sha256=badhash",
+                },
             )
         assert response.status_code == 403
+
+    def test_correct_signature_passes(self, client: TestClient) -> None:
+        import hashlib
+        import hmac
+        import json
+
+        secret = "my-app-secret"
+        body = json.dumps(_payload()).encode()
+        sig = "sha256=" + hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
+
+        with patch("app.api.webhook.settings") as mock_settings:
+            mock_settings.whatsapp_app_secret = secret
+            mock_settings.whatsapp_verify_token = ""
+            with patch("app.api.webhook._handle_whatsapp_update", new_callable=AsyncMock):
+                response = client.post(
+                    "/whatsapp",
+                    content=body,
+                    headers={
+                        "Content-Type": "application/json",
+                        "X-Hub-Signature-256": sig,
+                    },
+                )
+        assert response.status_code == 200

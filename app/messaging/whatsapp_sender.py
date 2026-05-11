@@ -1,39 +1,29 @@
 from __future__ import annotations
 
-import asyncio
 import logging
 
-from twilio.rest import Client
+import httpx
 
 from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-_client: Client | None = None
-
-
-def _get_client() -> Client:
-    global _client
-    if _client is None:
-        _client = Client(
-            settings.twilio_api_key_sid,
-            settings.twilio_client_secret,
-            settings.twilio_account_sid,
-        )
-    return _client
-
-
-def _send_sync(to: str, body: str) -> None:
-    _get_client().messages.create(
-        from_=f"whatsapp:{settings.twilio_whatsapp_from}",
-        to=f"whatsapp:{to}",
-        body=body,
-    )
+_GRAPH_API = "https://graph.facebook.com/v19.0"
 
 
 async def send_message(recipient_id: str, text: str) -> None:
-    """Send a WhatsApp message via Twilio. recipient_id is an E.164 phone number."""
+    """Send a WhatsApp message via the Meta Graph API. recipient_id is an E.164 phone number."""
+    url = f"{_GRAPH_API}/{settings.whatsapp_phone_number_id}/messages"
+    payload = {
+        "messaging_product": "whatsapp",
+        "to": recipient_id,
+        "type": "text",
+        "text": {"body": text},
+    }
+    headers = {"Authorization": f"Bearer {settings.whatsapp_access_token}"}
     try:
-        await asyncio.to_thread(_send_sync, recipient_id, text)
+        async with httpx.AsyncClient() as client:
+            r = await client.post(url, json=payload, headers=headers)
+            r.raise_for_status()
     except Exception:
-        logger.exception("Twilio send failed to %s", recipient_id)
+        logger.exception("Meta WhatsApp send failed to %s", recipient_id)

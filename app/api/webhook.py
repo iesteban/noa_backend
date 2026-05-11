@@ -1,11 +1,13 @@
+import hashlib
+import hmac
 import logging
 
 import sentry_sdk
-from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Request
-from twilio.request_validator import RequestValidator
+from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Query, Request
+from fastapi.responses import PlainTextResponse
 
 from app.ai.claude import call_claude
-from app.ai.whisper import transcribe, transcribe_from_url
+from app.ai.whisper import transcribe, transcribe_from_meta
 from app.config import settings
 from app.database import async_session_factory
 from app.messaging.parser import parse_update
@@ -15,7 +17,7 @@ from app.messaging.whatsapp_parser import parse_whatsapp
 from app.messaging.whatsapp_sender import send_message as whatsapp_send
 from app.models.session import MessageRole
 from app.schemas.telegram import TelegramUpdate
-from app.schemas.whatsapp import TwilioWebhook
+from app.schemas.whatsapp import MetaWebhook
 from app.services.onboarding import handle_onboarding_message
 from app.services.routing import resolve_routing
 from app.services.session import append_message, get_or_create_session
@@ -64,10 +66,7 @@ async def _dispatch(inbound: InboundMessage, send: MessageSender, channel: str) 
                 if channel == "telegram":
                     text, media_url = await transcribe(inbound.file_id)
                 else:
-                    text, media_url = await transcribe_from_url(
-                        inbound.file_id,
-                        auth=(settings.twilio_api_key_sid, settings.twilio_client_secret),
-                    )
+                    text, media_url = await transcribe_from_meta(inbound.file_id)
             except Exception as exc:
                 sentry_sdk.capture_exception(exc)
                 logger.exception("Whisper transcription failed for file_id %s", inbound.file_id)
@@ -113,32 +112,51 @@ async def telegram_webhook(
 
 
 # ---------------------------------------------------------------------------
-# WhatsApp (Twilio)
+# WhatsApp (Meta Graph API)
 # ---------------------------------------------------------------------------
 
-async def _validate_twilio_signature(
+async def _validate_meta_signature(
     request: Request,
-    x_twilio_signature: str | None = Header(default=None),
+    x_hub_signature_256: str | None = Header(default=None),
 ) -> None:
-    if not x_twilio_signature:
-        raise HTTPException(status_code=403, detail="Missing Twilio signature")
-    validator = RequestValidator(settings.twilio_client_secret)
-    form = dict(await request.form())
-    if not validator.validate(str(request.url), form, x_twilio_signature):
-        raise HTTPException(status_code=403, detail="Invalid Twilio signature")
+    if not settings.whatsapp_app_secret:
+        return
+    if not x_hub_signature_256:
+        raise HTTPException(status_code=403, detail="Missing signature")
+    body = await request.body()
+    computed = "sha256=" + hmac.new(
+        settings.whatsapp_app_secret.encode(),
+        body,
+        hashlib.sha256,
+    ).hexdigest()
+    if not hmac.compare_digest(x_hub_signature_256, computed):
+        raise HTTPException(status_code=403, detail="Invalid signature")
 
 
-async def _handle_whatsapp_update(webhook: TwilioWebhook) -> None:
+async def _handle_whatsapp_update(webhook: MetaWebhook) -> None:
     inbound = parse_whatsapp(webhook)
+    if inbound is None:
+        return
     await _dispatch(inbound, whatsapp_send, "whatsapp")
 
 
-@router.post("/whatsapp", dependencies=[Depends(_validate_twilio_signature)])
+@router.get("/whatsapp")
+async def whatsapp_verify(
+    hub_mode: str | None = Query(default=None, alias="hub.mode"),
+    hub_verify_token: str | None = Query(default=None, alias="hub.verify_token"),
+    hub_challenge: str | None = Query(default=None, alias="hub.challenge"),
+) -> PlainTextResponse:
+    if hub_mode != "subscribe" or hub_verify_token != settings.whatsapp_verify_token:
+        raise HTTPException(status_code=403, detail="Verification failed")
+    return PlainTextResponse(hub_challenge or "")
+
+
+@router.post("/whatsapp", dependencies=[Depends(_validate_meta_signature)])
 async def whatsapp_webhook(
     request: Request,
     background_tasks: BackgroundTasks,
 ) -> dict[str, str]:
-    form = dict(await request.form())
-    webhook = TwilioWebhook.model_validate(form)
+    body = await request.json()
+    webhook = MetaWebhook.model_validate(body)
     background_tasks.add_task(_handle_whatsapp_update, webhook)
     return {"ok": "true"}
