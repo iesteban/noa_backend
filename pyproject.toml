@@ -58,5 +58,5 @@ warn_unused_ignores = false
 asyncio_mode = "auto"
 testpaths = ["tests"]
 env = [
-    "D:DATABASE_URL=postgresql+asyncpg://noa:noa@localhost:5432/noa_test",
+    "D:DATABASE_URL=postgresql+asyncpg://noa:noa@localhost:5433/noa_test",
 ]
