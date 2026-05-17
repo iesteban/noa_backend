@@ -250,6 +250,52 @@ _CONTRACTOR_TOOL_LIST: list[dict[str, Any]] = [
             "required": ["client_id", "file_url"],
         },
     },
+    {
+        "name": "list_instructions",
+        "description": "Return the contractor's saved personal instructions.",
+        "input_schema": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+    },
+    {
+        "name": "save_instruction",
+        "description": (
+            "Save a new personal instruction that Noa will apply automatically. "
+            "Always confirm with the contractor what you understood before saving. "
+            "Scope must be one of: global, invoices, budgets, reminders, appointments."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "scope": {
+                    "type": "string",
+                    "enum": ["global", "invoices", "budgets", "reminders", "appointments"],
+                    "description": "Context where this instruction applies.",
+                },
+                "instruction": {
+                    "type": "string",
+                    "description": "Plain-language instruction (max 280 characters).",
+                },
+            },
+            "required": ["scope", "instruction"],
+        },
+    },
+    {
+        "name": "delete_instruction",
+        "description": "Delete a saved personal instruction by its ID.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "instruction_id": {
+                    "type": "string",
+                    "description": "UUID of the instruction to delete.",
+                },
+            },
+            "required": ["instruction_id"],
+        },
+    },
 ]
 
 _CLIENT_TOOL_LIST: list[dict[str, Any]] = [
