@@ -22,6 +22,7 @@ from app.database import Base
 from app.models.appointment import Appointment, CalendarToken  # noqa: F401
 from app.models.client import Client
 from app.models.contractor import Channel, Contractor
+from app.models.error_report import ErrorReport  # noqa: F401
 from app.models.job import Job
 from app.models.session import ConversationSession, Message, MessageRole, UserType
 
