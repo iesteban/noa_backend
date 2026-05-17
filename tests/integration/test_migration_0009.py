@@ -52,7 +52,7 @@ class TestMigration0009:
 
     def test_downgrade_drops_table_and_index(self, _schema: None) -> None:
         cfg = _alembic_cfg()
-        command.downgrade(cfg, "0007")
+        command.downgrade(cfg, "0008")
         try:
             assert not asyncio.run(_table_exists("error_reports"))
             assert not asyncio.run(_index_exists("ix_error_reports_contractor_created"))
