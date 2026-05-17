@@ -142,10 +142,17 @@ async def _handle_whatsapp_update(webhook: MetaWebhook) -> None:
 
 @router.get("/whatsapp")
 async def whatsapp_verify(
-    hub_mode: str | None = Query(default=None, alias="hub.mode"),
-    hub_verify_token: str | None = Query(default=None, alias="hub.verify_token"),
-    hub_challenge: str | None = Query(default=None, alias="hub.challenge"),
+    hub_mode_dot: str | None = Query(default=None, alias="hub.mode"),
+    hub_mode_us: str | None = Query(default=None, alias="hub_mode"),
+    hub_verify_token_dot: str | None = Query(default=None, alias="hub.verify_token"),
+    hub_verify_token_us: str | None = Query(default=None, alias="hub_verify_token"),
+    hub_challenge_dot: str | None = Query(default=None, alias="hub.challenge"),
+    hub_challenge_us: str | None = Query(default=None, alias="hub_challenge"),
 ) -> PlainTextResponse:
+    # Some proxies convert dots to underscores in query param names; accept both forms.
+    hub_mode = hub_mode_dot or hub_mode_us
+    hub_verify_token = hub_verify_token_dot or hub_verify_token_us
+    hub_challenge = hub_challenge_dot or hub_challenge_us
     if hub_mode != "subscribe" or hub_verify_token != settings.whatsapp_verify_token:
         raise HTTPException(status_code=403, detail="Verification failed")
     return PlainTextResponse(hub_challenge or "")
