@@ -203,7 +203,8 @@ class TestContactMessage:
         assert "Ana García" in result.text
 
     def test_text_contains_phone(self) -> None:
-        result = parse_whatsapp(_contact_webhook(phones=[{"phone": "+34611223344", "type": "CELL"}]))
+        phones = [{"phone": "+34611223344", "type": "CELL"}]
+        result = parse_whatsapp(_contact_webhook(phones=phones))
         assert result is not None
         assert result.text is not None
         assert "+34611223344" in result.text
