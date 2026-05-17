@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from app.messaging.contacts import format_contact_text, parse_vcard_phones
 from app.messaging.types import InboundMessage, MessageType
 from app.schemas.whatsapp import MetaWebhook
 
@@ -48,12 +49,47 @@ def parse_whatsapp(webhook: MetaWebhook) -> InboundMessage | None:
             file_id=message.document.id,
         )
 
-    body = message.text.body if message.text else ""
+    if message.type == "contacts" and message.contacts:
+        contact = message.contacts[0]
+        name = contact.name.formatted_name
+
+        phones: list[tuple[str, str]] = []
+        if contact.vcard:
+            phones = parse_vcard_phones(contact.vcard)
+        if not phones:
+            phones = [
+                (p.phone, (p.type or "teléfono").lower()) for p in contact.phones if p.phone
+            ]
+
+        text = (
+            format_contact_text(name, phones)
+            if phones
+            else f"[Contacto compartido]\nNombre: {name}"
+        )
+        return InboundMessage(
+            update_id=update_id,
+            recipient_id=phone_number,
+            phone_number=phone_number,
+            message_type=MessageType.contact,
+            text=text,
+            file_id=None,
+        )
+
+    if message.type == "text" and message.text:
+        return InboundMessage(
+            update_id=update_id,
+            recipient_id=phone_number,
+            phone_number=phone_number,
+            message_type=MessageType.text,
+            text=message.text.body,
+            file_id=None,
+        )
+
     return InboundMessage(
         update_id=update_id,
         recipient_id=phone_number,
         phone_number=phone_number,
-        message_type=MessageType.text,
-        text=body,
+        message_type=MessageType.unknown,
+        text=None,
         file_id=None,
     )
