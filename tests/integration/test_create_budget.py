@@ -194,7 +194,7 @@ class TestCreateBudgetIntegration:
         captured: list[bytes] = []
 
         def fake_upload(
-            contractor_id: object, entity_type: object, file_bytes: bytes, ext: object
+            contractor_id: object, entity_type: object, file_bytes: bytes, ext: object, **_: object
         ) -> str:
             captured.append(file_bytes)
             return _FAKE_PDF_URL
