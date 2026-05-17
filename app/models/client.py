@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import UUID, ForeignKey, Index, String, UniqueConstraint
+from sqlalchemy import UUID, Boolean, ForeignKey, Index, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -27,6 +27,9 @@ class Client(PrimaryKeyMixin, TimestampMixin, Base):
     phone_number: Mapped[str] = mapped_column(String(20), nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     nif: Mapped[str | None] = mapped_column(String(20))
+    is_business: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
     notes: Mapped[str | None] = mapped_column(String(2000))
 
     contractor: Mapped[Contractor] = relationship(back_populates="clients")  # noqa: F821
