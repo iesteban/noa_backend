@@ -40,7 +40,7 @@ async def get_recent_messages(
         .limit(_HISTORY_LIMIT)
     )
     messages = list(reversed(rows.scalars().all()))
-    return [{"role": m.role.value, "content": m.content} for m in messages]
+    return [{"role": m.role.value, "content": m.content} for m in messages if m.content]
 
 
 async def call_claude(

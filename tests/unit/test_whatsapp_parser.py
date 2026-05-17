@@ -157,6 +157,128 @@ class TestDocumentMessage:
         assert result.file_id == "doc-media-id"
 
 
+def _contact_webhook(
+    name: str = "Ana García",
+    phones: list[dict] | None = None,
+    vcard: str | None = None,
+    from_number: str = "34600123456",
+) -> MetaWebhook:
+    contact: dict = {
+        "name": {"formatted_name": name},
+        "phones": phones or [{"phone": "+34611223344", "type": "CELL"}],
+    }
+    if vcard:
+        contact["vcard"] = vcard
+    return MetaWebhook.model_validate({
+        "object": "whatsapp_business_account",
+        "entry": [{
+            "id": "waba-id",
+            "changes": [{
+                "value": {
+                    "messaging_product": "whatsapp",
+                    "messages": [{
+                        "from": from_number,
+                        "id": "wamid.contact1",
+                        "timestamp": "1700000000",
+                        "type": "contacts",
+                        "contacts": [contact],
+                    }],
+                },
+                "field": "messages",
+            }],
+        }],
+    })
+
+
+class TestContactMessage:
+    def test_message_type(self) -> None:
+        result = parse_whatsapp(_contact_webhook())
+        assert result is not None
+        assert result.message_type == MessageType.contact
+
+    def test_text_contains_name(self) -> None:
+        result = parse_whatsapp(_contact_webhook(name="Ana García"))
+        assert result is not None
+        assert result.text is not None
+        assert "Ana García" in result.text
+
+    def test_text_contains_phone(self) -> None:
+        phones = [{"phone": "+34611223344", "type": "CELL"}]
+        result = parse_whatsapp(_contact_webhook(phones=phones))
+        assert result is not None
+        assert result.text is not None
+        assert "+34611223344" in result.text
+
+    def test_multiple_phones_listed(self) -> None:
+        phones = [
+            {"phone": "+34611111111", "type": "CELL"},
+            {"phone": "+34922222222", "type": "HOME"},
+        ]
+        result = parse_whatsapp(_contact_webhook(phones=phones))
+        assert result is not None
+        assert result.text is not None
+        assert "+34611111111" in result.text
+        assert "+34922222222" in result.text
+
+    def test_vcard_phones_used_when_present(self) -> None:
+        vcard = "BEGIN:VCARD\nTEL;TYPE=CELL:+34699999999\nEND:VCARD"
+        result = parse_whatsapp(_contact_webhook(vcard=vcard))
+        assert result is not None
+        assert result.text is not None
+        assert "+34699999999" in result.text
+
+    def test_no_file_id(self) -> None:
+        result = parse_whatsapp(_contact_webhook())
+        assert result is not None
+        assert result.file_id is None
+
+
+class TestUnknownMessage:
+    def test_sticker_returns_unknown(self) -> None:
+        result = parse_whatsapp(MetaWebhook.model_validate({
+            "object": "whatsapp_business_account",
+            "entry": [{
+                "id": "waba-id",
+                "changes": [{
+                    "value": {
+                        "messaging_product": "whatsapp",
+                        "messages": [{
+                            "from": "34600123456",
+                            "id": "wamid.sticker1",
+                            "timestamp": "1700000000",
+                            "type": "sticker",
+                        }],
+                    },
+                    "field": "messages",
+                }],
+            }],
+        }))
+        assert result is not None
+        assert result.message_type == MessageType.unknown
+
+    def test_unknown_text_is_none(self) -> None:
+        result = parse_whatsapp(MetaWebhook.model_validate({
+            "object": "whatsapp_business_account",
+            "entry": [{
+                "id": "waba-id",
+                "changes": [{
+                    "value": {
+                        "messaging_product": "whatsapp",
+                        "messages": [{
+                            "from": "34600123456",
+                            "id": "wamid.sticker1",
+                            "timestamp": "1700000000",
+                            "type": "sticker",
+                        }],
+                    },
+                    "field": "messages",
+                }],
+            }],
+        }))
+        assert result is not None
+        assert result.text is None
+
+
 class TestStatusUpdate:
     def test_returns_none_for_status_update(self) -> None:
         result = parse_whatsapp(_status_webhook())

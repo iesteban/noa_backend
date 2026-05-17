@@ -112,6 +112,7 @@ async def handle_create_invoice(
         entity_type="invoices",
         file_bytes=pdf_bytes,
         ext="pdf",
+        public=True,
     )
     invoice.pdf_url = pdf_url
     await db.flush()
