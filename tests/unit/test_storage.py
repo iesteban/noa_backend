@@ -69,6 +69,14 @@ class TestUploadFile:
         key = s3.put_object.call_args.kwargs["Key"]
         assert url.endswith(key)
 
+    def test_private_upload_has_no_acl(self, s3: MagicMock) -> None:
+        upload_file("abc-123", "voice", b"audio", "ogg")
+        assert "ACL" not in s3.put_object.call_args.kwargs
+
+    def test_public_upload_sets_public_read_acl(self, s3: MagicMock) -> None:
+        upload_file("abc-123", "invoices", b"pdf", "pdf", public=True)
+        assert s3.put_object.call_args.kwargs["ACL"] == "public-read"
+
 
 # ---------------------------------------------------------------------------
 # presign_url

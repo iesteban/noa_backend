@@ -90,6 +90,7 @@ async def handle_create_budget(
         entity_type="budgets",
         file_bytes=pdf_bytes,
         ext="pdf",
+        public=True,
     )
     budget.pdf_url = pdf_url
     await db.flush()
