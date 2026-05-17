@@ -35,6 +35,7 @@ class Contractor(PrimaryKeyMixin, TimestampMixin, Base):
         Enum(Channel), nullable=False, default=Channel.telegram
     )
     telegram_chat_id: Mapped[str | None] = mapped_column(String(50))
+    email: Mapped[str | None] = mapped_column(String(255))
     onboarded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     clients: Mapped[list[Client]] = relationship(back_populates="contractor")  # noqa: F821
