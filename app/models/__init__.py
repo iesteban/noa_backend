@@ -7,6 +7,7 @@ from app.models.appointment import (
 from app.models.budget import Budget, BudgetLine, BudgetStatus
 from app.models.client import Client
 from app.models.contractor import Channel, Contractor
+from app.models.error_report import ErrorReport, Platform
 from app.models.instruction import ContractorInstruction, InstructionScope
 from app.models.invoice import Invoice, InvoiceLine, InvoiceStatus
 from app.models.job import Job, JobStatus
@@ -24,6 +25,8 @@ __all__ = [
     "Channel",
     "Client",
     "Contractor",
+    "ErrorReport",
+    "Platform",
     "ContractorInstruction",
     "ConversationSession",
     "InstructionScope",
