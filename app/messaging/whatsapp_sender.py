@@ -24,6 +24,8 @@ async def send_message(recipient_id: str, text: str) -> None:
     try:
         async with httpx.AsyncClient() as client:
             r = await client.post(url, json=payload, headers=headers)
+            if not r.is_success:
+                logger.error("Meta WhatsApp send failed to %s: %s %s", recipient_id, r.status_code, r.text)
             r.raise_for_status()
     except Exception:
         logger.exception("Meta WhatsApp send failed to %s", recipient_id)
