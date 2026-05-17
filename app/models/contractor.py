@@ -12,6 +12,7 @@ from app.models.mixins import PrimaryKeyMixin, TimestampMixin
 
 if TYPE_CHECKING:
     from app.models.client import Client
+    from app.models.error_report import ErrorReport
     from app.models.job import Job
 
 
@@ -40,3 +41,4 @@ class Contractor(PrimaryKeyMixin, TimestampMixin, Base):
 
     clients: Mapped[list[Client]] = relationship(back_populates="contractor")  # noqa: F821
     jobs: Mapped[list[Job]] = relationship(back_populates="contractor")  # noqa: F821
+    error_reports: Mapped[list[ErrorReport]] = relationship(back_populates="contractor")  # noqa: F821
