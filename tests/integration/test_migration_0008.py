@@ -17,7 +17,6 @@ from sqlalchemy.ext.asyncio import create_async_engine
 
 from alembic import command
 from app.config import settings
-from app.models.client import Client
 
 
 def _alembic_cfg() -> Config:
