@@ -58,6 +58,14 @@ async def _dispatch(inbound: InboundMessage, send: MessageSender, channel: str) 
             routing=routing,
         )
 
+        if inbound.message_type == MessageType.unknown:
+            await send(
+                inbound.recipient_id,
+                "No he podido entender este tipo de mensaje. "
+                "Puedes enviarme texto, audio, imágenes o contactos.",
+            )
+            return
+
         text = inbound.text or ""
         media_url: str | None = None
 

@@ -14,6 +14,24 @@ class MetaMediaContent(BaseModel):
     voice: bool = False
 
 
+class MetaContactPhone(BaseModel):
+    phone: str
+    type: str | None = None
+    wa_id: str | None = None
+
+
+class MetaContactName(BaseModel):
+    formatted_name: str
+    first_name: str | None = None
+    last_name: str | None = None
+
+
+class MetaContact(BaseModel):
+    name: MetaContactName
+    phones: list[MetaContactPhone] = []
+    vcard: str | None = None
+
+
 class MetaMessage(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
@@ -25,6 +43,7 @@ class MetaMessage(BaseModel):
     audio: MetaMediaContent | None = None
     image: MetaMediaContent | None = None
     document: MetaMediaContent | None = None
+    contacts: list[MetaContact] = []
 
 
 class MetaValue(BaseModel):
