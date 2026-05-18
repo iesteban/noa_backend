@@ -295,3 +295,84 @@ class TestUpdateId:
         result = parse_whatsapp(_webhook())
         assert result is not None
         assert result.update_id >= 0
+
+
+class TestInteractiveButtonTap:
+    def test_button_reply_returns_text_message(self) -> None:
+        raw = {
+            "object": "whatsapp_business_account",
+            "entry": [{
+                "id": "waba-id",
+                "changes": [{
+                    "value": {
+                        "messaging_product": "whatsapp",
+                        "messages": [{
+                            "from": "34600123456",
+                            "id": "wamid.btn1",
+                            "timestamp": "1700000000",
+                            "type": "interactive",
+                            "interactive": {
+                                "type": "button_reply",
+                                "button_reply": {"id": "0", "title": "Sí"},
+                            },
+                        }],
+                    },
+                    "field": "messages",
+                }],
+            }],
+        }
+        result = parse_whatsapp(MetaWebhook.model_validate(raw))
+        assert result is not None
+        assert result.message_type == MessageType.text
+        assert result.text == "Sí"
+
+    def test_list_reply_returns_text_message(self) -> None:
+        raw = {
+            "object": "whatsapp_business_account",
+            "entry": [{
+                "id": "waba-id",
+                "changes": [{
+                    "value": {
+                        "messaging_product": "whatsapp",
+                        "messages": [{
+                            "from": "34600123456",
+                            "id": "wamid.lst1",
+                            "timestamp": "1700000000",
+                            "type": "interactive",
+                            "interactive": {
+                                "type": "list_reply",
+                                "list_reply": {"id": "1", "title": "Pedro Sánchez"},
+                            },
+                        }],
+                    },
+                    "field": "messages",
+                }],
+            }],
+        }
+        result = parse_whatsapp(MetaWebhook.model_validate(raw))
+        assert result is not None
+        assert result.message_type == MessageType.text
+        assert result.text == "Pedro Sánchez"
+
+    def test_interactive_with_no_reply_data_returns_unknown(self) -> None:
+        raw = {
+            "object": "whatsapp_business_account",
+            "entry": [{
+                "id": "waba-id",
+                "changes": [{
+                    "value": {
+                        "messaging_product": "whatsapp",
+                        "messages": [{
+                            "from": "34600123456",
+                            "id": "wamid.noreply",
+                            "timestamp": "1700000000",
+                            "type": "interactive",
+                            "interactive": {"type": "unknown_type"},
+                        }],
+                    },
+                    "field": "messages",
+                }],
+            }],
+        }
+        result = parse_whatsapp(MetaWebhook.model_validate(raw))
+        assert result is None or result.message_type == MessageType.unknown

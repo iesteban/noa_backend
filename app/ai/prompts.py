@@ -28,7 +28,7 @@ Respond in the same language the contractor uses. Default to Spanish.
     ¿Lo guardo? (Sí / No / Editar)
 
   For send actions (invoice, file):
-    Factura generada. ¿Se la envío a [client] ahora?
+    Factura generada. ¿Se la envío a [client] ahora? (Sí / No)
 
   Exception — shared contacts: when the contractor sends a contact card
   ([Contacto compartido] message), save the client immediately without asking

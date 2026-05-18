@@ -10,6 +10,20 @@ logger = logging.getLogger(__name__)
 
 
 def parse_update(update: TelegramUpdate) -> InboundMessage | None:
+    # Inline keyboard button tap — treat the callback data as a regular text message.
+    if update.callback_query is not None:
+        cq = update.callback_query
+        if cq.message is None or not cq.data:
+            return None
+        return InboundMessage(
+            update_id=update.update_id,
+            recipient_id=str(cq.message.chat.id),
+            phone_number=None,
+            message_type=MessageType.text,
+            text=cq.data,
+            file_id=None,
+        )
+
     message = update.message or update.edited_message
     if message is None:
         logger.info("Update %d has no message — skipping", update.update_id)
