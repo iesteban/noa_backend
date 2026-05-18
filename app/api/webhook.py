@@ -11,7 +11,9 @@ from app.ai.claude import call_claude
 from app.ai.whisper import transcribe, transcribe_from_meta
 from app.config import settings
 from app.database import async_session_factory
+from app.messaging.options import parse_options
 from app.messaging.parser import parse_update
+from app.messaging.telegram_sender import ack_callback_query
 from app.messaging.telegram_sender import send_message as telegram_send
 from app.messaging.types import InboundMessage, MessageSender, MessageType
 from app.messaging.whatsapp_parser import parse_whatsapp
@@ -143,10 +145,11 @@ async def _dispatch(inbound: InboundMessage, send: MessageSender, channel: str) 
         ):
             return
 
-        reply = await call_claude(db, session, text)
+        raw_reply = await call_claude(db, session, text)
+        clean_text, options = parse_options(raw_reply)
 
-        await append_message(db, session.id, MessageRole.assistant, reply)
-        await send(inbound.recipient_id, reply)
+        await append_message(db, session.id, MessageRole.assistant, clean_text)
+        await send(inbound.recipient_id, clean_text, options)
 
 
 # ---------------------------------------------------------------------------
@@ -154,6 +157,8 @@ async def _dispatch(inbound: InboundMessage, send: MessageSender, channel: str) 
 # ---------------------------------------------------------------------------
 
 async def _handle_telegram_update(update: TelegramUpdate) -> None:
+    if update.callback_query is not None:
+        await ack_callback_query(update.callback_query.id)
     inbound = parse_update(update)
     if inbound is None:
         return
