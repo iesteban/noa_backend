@@ -219,6 +219,9 @@ async def handle_create_appointment(
     if starts_at.tzinfo is None:
         starts_at = starts_at.replace(tzinfo=UTC)
 
+    if starts_at < datetime.now(UTC):
+        return "starts_at está en el pasado — usa una fecha y hora futuras."
+
     appointment = Appointment(
         contractor_id=session.contractor_id,
         client_id=client_id,
