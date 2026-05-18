@@ -132,9 +132,9 @@ async def _dispatch(inbound: InboundMessage, send: MessageSender, channel: str) 
                 )
                 return
 
-        last_assistant = await get_last_assistant_message(db, session.id)
-
         await append_message(db, session.id, MessageRole.user, text, media_url=media_url)
+
+        last_assistant = await get_last_assistant_message(db, session.id)
 
         if await _try_handle_error_report(
             db, session, text, channel, last_assistant, send, inbound.recipient_id
