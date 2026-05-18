@@ -2,12 +2,14 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
+from unittest.mock import AsyncMock
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.webhook import _try_handle_error_report
 from app.models.error_report import ErrorReport, Platform
-from app.models.session import MessageRole
+from app.models.session import MessageRole, UserType
 from app.services.error_report import get_last_assistant_message, save_error_report
 from tests.integration.conftest import make_contractor, make_message, make_session
 
@@ -150,3 +152,42 @@ class TestGetLastAssistantMessage:
         result = await get_last_assistant_message(db, session.id)
 
         assert result == "segunda respuesta"
+
+
+class TestTryHandleErrorReport:
+    async def test_two_turn_flow_saves_report_and_clears_pending(
+        self, db: AsyncSession
+    ) -> None:
+        contractor = await make_contractor(db)
+        session = await make_session(db, contractor, context={"pending_error_report": True})
+        send = AsyncMock()
+
+        consumed = await _try_handle_error_report(
+            db, session, "el importe está mal", "telegram", None, send, "111"
+        )
+
+        assert consumed is True
+        row = await db.execute(
+            select(ErrorReport).where(ErrorReport.contractor_id == contractor.id)
+        )
+        report = row.scalar_one()
+        assert report.user_message == "el importe está mal"
+        assert "pending_error_report" not in session.context
+        send.assert_called_once()
+        assert "anotado" in send.call_args[0][1].lower()
+
+    async def test_client_session_not_handled(self, db: AsyncSession) -> None:
+        contractor = await make_contractor(db)
+        session = await make_session(db, contractor, user_type=UserType.client)
+        send = AsyncMock()
+
+        consumed = await _try_handle_error_report(
+            db, session, "está mal", "telegram", None, send, "111"
+        )
+
+        assert consumed is False
+        send.assert_not_called()
+        row = await db.execute(
+            select(ErrorReport).where(ErrorReport.contractor_id == contractor.id)
+        )
+        assert row.scalar_one_or_none() is None

@@ -16,7 +16,7 @@ from app.messaging.telegram_sender import send_message as telegram_send
 from app.messaging.types import InboundMessage, MessageSender, MessageType
 from app.messaging.whatsapp_parser import parse_whatsapp
 from app.messaging.whatsapp_sender import send_message as whatsapp_send
-from app.models.session import ConversationSession, MessageRole
+from app.models.session import ConversationSession, MessageRole, UserType
 from app.schemas.telegram import TelegramUpdate
 from app.schemas.whatsapp import MetaWebhook
 from app.services.error_report import (
@@ -45,13 +45,15 @@ async def _try_handle_error_report(
     recipient_id: str,
 ) -> bool:
     """Handle error-report turns. Returns True if the message was consumed."""
+    if session.user_type != UserType.contractor:
+        return False
+
     if session.context.get("pending_error_report"):
         lang = detect_language(text)
-        await save_error_report(db, session, text, channel)
         ctx = dict(session.context)
         ctx.pop("pending_error_report")
         session.context = ctx
-        await db.commit()
+        await save_error_report(db, session, text, channel)  # commits report + context together
         reply = ack_message(lang)
         await append_message(db, session.id, MessageRole.assistant, reply)
         await send(recipient_id, reply)
