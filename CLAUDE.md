@@ -218,9 +218,18 @@ cd infra/terraform && AWS_ACCESS_KEY_ID=$SCW_ACCESS_KEY AWS_SECRET_ACCESS_KEY=$S
 ./infra/scripts/setup.sh production
 ```
 
+### Secret management — strict rule
+
+**Every secret lives in exactly two places: `.env.<env>` (local) and GitHub Actions secrets (CI). Nowhere else.**
+
+- Never put secrets in `terraform.tfvars.*`, source code, comments, or any versioned file — even gitignored ones.
+- `.env.<env>` files are the local source of truth. `terraform.tfvars.<env>` files must contain only non-secret config (region, domain, node type, feature flags).
+- Terraform variables for secrets are passed as `TF_VAR_*` env vars at apply time — in CI from GitHub secrets, locally by exporting them from the sourced `.env` file.
+- When a new secret is needed: add it to `.env.staging` / `.env.production`, export it as `TF_VAR_<name>` before running infra scripts locally, and set the GitHub secret immediately (see below).
+
 ### Tfvars files
 
-`infra/terraform/terraform.tfvars.<env>` — gitignored, never commit. Copy from `terraform.tfvars.example` and fill in secrets. The `.env.<env>` file is the source of truth for secret values; tfvars are derived from it.
+`infra/terraform/terraform.tfvars.<env>` — gitignored, never commit. Contains only non-secret config (environment, region, node types, domain names, feature flags). Never put credentials or API keys here.
 
 ### GitHub secrets
 
