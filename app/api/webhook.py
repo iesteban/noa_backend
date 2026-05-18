@@ -18,6 +18,14 @@ from app.messaging.whatsapp_sender import send_message as whatsapp_send
 from app.models.session import MessageRole
 from app.schemas.telegram import TelegramUpdate
 from app.schemas.whatsapp import MetaWebhook
+from app.services.error_report import (
+    ack_message,
+    ask_message,
+    detect_error_intent,
+    detect_language,
+    get_last_assistant_message,
+    save_error_report,
+)
 from app.services.onboarding import handle_onboarding_message
 from app.services.routing import resolve_routing
 from app.services.session import append_message, get_or_create_session
@@ -84,7 +92,35 @@ async def _dispatch(inbound: InboundMessage, send: MessageSender, channel: str) 
                 )
                 return
 
+        last_assistant = await get_last_assistant_message(db, session.id)
+
         await append_message(db, session.id, MessageRole.user, text, media_url=media_url)
+
+        # --- Error report flow (contractor only) ---
+        if session.context.get("pending_error_report"):
+            lang = detect_language(text)
+            await save_error_report(db, session, text, channel)
+            session.context = {k: v for k, v in session.context.items() if k != "pending_error_report"}  # noqa: E501
+            await db.commit()
+            reply = ack_message(lang)
+            await append_message(db, session.id, MessageRole.assistant, reply)
+            await send(inbound.recipient_id, reply)
+            return
+
+        is_error, description = detect_error_intent(text, last_assistant)
+        if is_error:
+            lang = detect_language(text)
+            if description is not None:
+                await save_error_report(db, session, description, channel)
+                reply = ack_message(lang)
+            else:
+                session.context = {**session.context, "pending_error_report": True}
+                await db.commit()
+                reply = ask_message(lang)
+            await append_message(db, session.id, MessageRole.assistant, reply)
+            await send(inbound.recipient_id, reply)
+            return
+        # --- End error report flow ---
 
         reply = await call_claude(db, session, text)
 
