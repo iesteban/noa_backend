@@ -15,6 +15,32 @@
       "justMyCode": false
     },
     {
+      "name": "Setup: install dependencies",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pip",
+      "args": ["install", "-e", ".[dev]"],
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}"
+      },
+      "envFile": "${workspaceFolder}/.env",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
+      "name": "Setup: run migrations",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "alembic",
+      "args": ["upgrade", "head"],
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}"
+      },
+      "envFile": "${workspaceFolder}/.env",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
       "name": "Test: all",
       "type": "debugpy",
       "request": "launch",
