@@ -7,7 +7,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, 
 from fastapi.responses import PlainTextResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.ai.claude import call_claude
+from app.ai.claude import call_claude, get_recent_messages
 from app.ai.whisper import transcribe, transcribe_from_meta
 from app.config import settings
 from app.database import async_session_factory
@@ -26,7 +26,6 @@ from app.services.error_report import (
     ask_message,
     detect_error_intent,
     detect_language,
-    get_last_assistant_message,
     save_error_report,
 )
 from app.services.onboarding import handle_onboarding_message
@@ -136,16 +135,19 @@ async def _dispatch(inbound: InboundMessage, send: MessageSender, channel: str) 
                 )
                 return
 
-        await append_message(db, session.id, MessageRole.user, text, media_url=media_url)
+        history = await get_recent_messages(db, session.id)
+        last_assistant = next(
+            (m["content"] for m in reversed(history) if m["role"] == "assistant"), None
+        )
 
-        last_assistant = await get_last_assistant_message(db, session.id)
+        await append_message(db, session.id, MessageRole.user, text, media_url=media_url)
 
         if await _try_handle_error_report(
             db, session, text, channel, last_assistant, send, inbound.recipient_id
         ):
             return
 
-        raw_reply = await call_claude(db, session, text)
+        raw_reply = await call_claude(db, session, text, history=history)
         clean_text, options = parse_options(raw_reply)
 
         await append_message(db, session.id, MessageRole.assistant, clean_text)

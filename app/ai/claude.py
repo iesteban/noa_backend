@@ -47,6 +47,7 @@ async def call_claude(
     db: AsyncSession,
     session: ConversationSession,
     current_message: str,
+    history: list[dict[str, str]] | None = None,
 ) -> str:
     """Assemble the 4-layer request and run the agentic tool loop.
 
@@ -84,7 +85,8 @@ async def call_claude(
         {"type": "text", "text": layer3, "cache_control": {"type": "ephemeral"}},
     ]
 
-    history = await get_recent_messages(db, session.id)
+    if history is None:
+        history = await get_recent_messages(db, session.id)
     messages: list[Any] = [*history, {"role": "user", "content": current_message}]
 
     client = _make_client()
