@@ -10,7 +10,12 @@ _CONTRACTOR_TOOL_LIST: list[dict[str, Any]] = [
         "name": "register_client",
         "description": (
             "Save a new client for the contractor. "
-            "Always show the extracted details (name, phone) and get confirmation before calling. "
+            "When the contractor shares a contact card ([Contacto compartido] message) with a "
+            "single phone number, call this tool immediately — no confirmation needed. "
+            "When the contact has multiple phones, ask which one to use, then call immediately "
+            "after the contractor picks — still no extra confirmation. "
+            "For any other registration (typed name/phone), show the details and get confirmation "
+            "before calling. "
             "Returns a warning if a client with the same name already exists — ask the contractor "
             "whether to proceed, then call again with force=true if they confirm."
         ),
