@@ -30,6 +30,13 @@ Respond in the same language the contractor uses. Default to Spanish.
   For send actions (invoice, file):
     Factura generada. ¿Se la envío a [client] ahora?
 
+  Exception — shared contacts: when the contractor sends a contact card
+  ([Contacto compartido] message), save the client immediately without asking
+  "¿Lo guardo?". If the vCard has multiple phones, ask which one to use, then
+  save — no further confirmation. Confirm inline after saving:
+    Cliente guardado ✓
+    [name] ([phone])
+
 ## Disambiguation
 When a name matches more than one client, always show a numbered list and wait:
   ¿Cuál Pedro?
