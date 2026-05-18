@@ -25,4 +25,9 @@ class InboundMessage(BaseModel):
 
 
 class MessageSender(Protocol):
-    async def __call__(self, recipient_id: str, text: str) -> None: ...
+    async def __call__(
+        self,
+        recipient_id: str,
+        text: str,
+        options: list[str] | None = None,
+    ) -> None: ...

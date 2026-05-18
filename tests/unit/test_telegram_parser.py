@@ -295,3 +295,70 @@ class TestTelegramUpdateParsing:
         result = parse_update(update)
         assert result is not None
         assert result.message_type == MessageType(field)
+
+
+class TestCallbackQuery:
+    def test_button_tap_returns_text_message(self) -> None:
+        raw = {
+            "update_id": 42,
+            "callback_query": {
+                "id": "cq-1",
+                "from": {"id": 999, "first_name": "Pedro"},
+                "message": {
+                    "message_id": 10,
+                    "chat": {"id": 111, "type": "private"},
+                    "date": 0,
+                    "text": "¿Lo guardo?",
+                },
+                "data": "Sí",
+            },
+        }
+        update = TelegramUpdate.model_validate(raw)
+        result = parse_update(update)
+        assert result is not None
+        assert result.message_type == MessageType.text
+        assert result.text == "Sí"
+        assert result.recipient_id == "111"
+
+    def test_button_tap_with_no_data_returns_none(self) -> None:
+        raw = {
+            "update_id": 43,
+            "callback_query": {
+                "id": "cq-2",
+                "from": {"id": 999, "first_name": "Pedro"},
+                "message": {
+                    "message_id": 11,
+                    "chat": {"id": 111, "type": "private"},
+                    "date": 0,
+                },
+            },
+        }
+        update = TelegramUpdate.model_validate(raw)
+        result = parse_update(update)
+        assert result is None
+
+    def test_callback_query_takes_priority_over_message(self) -> None:
+        raw = {
+            "update_id": 44,
+            "message": {
+                "message_id": 1,
+                "chat": {"id": 222, "type": "private"},
+                "date": 0,
+                "text": "ignored",
+            },
+            "callback_query": {
+                "id": "cq-3",
+                "from": {"id": 999, "first_name": "Pedro"},
+                "message": {
+                    "message_id": 12,
+                    "chat": {"id": 111, "type": "private"},
+                    "date": 0,
+                },
+                "data": "No",
+            },
+        }
+        update = TelegramUpdate.model_validate(raw)
+        result = parse_update(update)
+        assert result is not None
+        assert result.text == "No"
+        assert result.recipient_id == "111"

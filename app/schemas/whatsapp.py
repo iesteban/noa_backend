@@ -32,6 +32,23 @@ class MetaContact(BaseModel):
     vcard: str | None = None
 
 
+class MetaButtonReply(BaseModel):
+    id: str
+    title: str
+
+
+class MetaListReply(BaseModel):
+    id: str
+    title: str
+    description: str | None = None
+
+
+class MetaInteractive(BaseModel):
+    type: str
+    button_reply: MetaButtonReply | None = None
+    list_reply: MetaListReply | None = None
+
+
 class MetaMessage(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
@@ -44,6 +61,7 @@ class MetaMessage(BaseModel):
     image: MetaMediaContent | None = None
     document: MetaMediaContent | None = None
     contacts: list[MetaContact] = []
+    interactive: MetaInteractive | None = None
 
 
 class MetaValue(BaseModel):

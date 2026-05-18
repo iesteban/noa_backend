@@ -75,6 +75,24 @@ def parse_whatsapp(webhook: MetaWebhook) -> InboundMessage | None:
             file_id=None,
         )
 
+    if message.type == "interactive" and message.interactive:
+        interactive = message.interactive
+        if interactive.button_reply:
+            tapped = interactive.button_reply.title
+        elif interactive.list_reply:
+            tapped = interactive.list_reply.title
+        else:
+            tapped = None
+        if tapped:
+            return InboundMessage(
+                update_id=update_id,
+                recipient_id=phone_number,
+                phone_number=phone_number,
+                message_type=MessageType.text,
+                text=tapped,
+                file_id=None,
+            )
+
     if message.type == "text" and message.text:
         return InboundMessage(
             update_id=update_id,
