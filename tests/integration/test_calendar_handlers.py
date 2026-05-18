@@ -205,7 +205,7 @@ class TestGetAvailability:
 class TestCreateAppointment:
     def _input(self, **overrides: object) -> dict[str, object]:
         base: dict[str, object] = {
-            "starts_at": "2026-05-05T10:00:00",
+            "starts_at": "2027-06-01T10:00:00",
             "duration_minutes": 60,
             "description": "Visita fontanería",
         }
@@ -241,7 +241,7 @@ class TestCreateAppointment:
         appt = rows.scalars().one()
         assert appt.duration_minutes == 90
         assert appt.status == AppointmentStatus.scheduled
-        assert appt.starts_at == datetime(2026, 5, 5, 10, 0, tzinfo=UTC)
+        assert appt.starts_at == datetime(2027, 6, 1, 10, 0, tzinfo=UTC)
 
     async def test_syncs_to_google_calendar_when_connected(self, db: AsyncSession) -> None:
         contractor = await make_contractor(db)
@@ -318,10 +318,35 @@ class TestCreateAppointment:
         session = await make_session(db, contractor)
 
         result = await handle_create_appointment(
-            self._input(description="Cambio de caldera", starts_at="2026-05-05T14:30:00"),
+            self._input(description="Cambio de caldera", starts_at="2027-06-01T14:30:00"),
             db,
             session,
         )
 
         assert "Cambio de caldera" in result
         assert "14:30" in result
+
+    async def test_past_starts_at_returns_error(self, db: AsyncSession) -> None:
+        contractor = await make_contractor(db)
+        session = await make_session(db, contractor)
+
+        result = await handle_create_appointment(
+            self._input(starts_at="2020-01-01T10:00:00"), db, session
+        )
+
+        assert "pasado" in result.lower()
+
+    async def test_past_starts_at_does_not_persist_appointment(
+        self, db: AsyncSession
+    ) -> None:
+        contractor = await make_contractor(db)
+        session = await make_session(db, contractor)
+
+        await handle_create_appointment(
+            self._input(starts_at="2020-01-01T10:00:00"), db, session
+        )
+
+        rows = await db.execute(
+            select(Appointment).where(Appointment.contractor_id == contractor.id)
+        )
+        assert len(rows.scalars().all()) == 0

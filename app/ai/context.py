@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime
 
 from sqlalchemy import cast, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -60,7 +61,10 @@ async def get_recent_clients(
 
 async def build_contractor_context(db: AsyncSession, contractor: Contractor) -> str:
     """Build Layer 3 — contractor profile + client roster for the system prompt."""
+    today = datetime.now(UTC).date()
     lines: list[str] = [
+        f"Hoy: {today.isoformat()}",
+        "",
         "## Tu perfil",
         f"Nombre: {contractor.name}",
         f"Negocio: {contractor.business_name or contractor.name}",
