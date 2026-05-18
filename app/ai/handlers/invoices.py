@@ -5,11 +5,13 @@ import uuid
 from datetime import date
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.ai.dispatcher import register
 from app.models.client import Client
+from app.models.invoice import Invoice, InvoiceStatus
 from app.models.job import Job, JobStatus
 from app.models.session import ConversationSession
 from app.pdf.invoice import render_invoice_pdf
@@ -127,3 +129,129 @@ async def handle_create_invoice(
         f" | Total: {float(invoice.total):.2f}€"
         f" | PDF: {pdf_url}"
     )
+
+
+_MONTH_ES = {
+    1: "ene", 2: "feb", 3: "mar", 4: "abr", 5: "may", 6: "jun",
+    7: "jul", 8: "ago", 9: "sep", 10: "oct", 11: "nov", 12: "dic",
+}
+
+_STATUS_ES: dict[InvoiceStatus, str] = {
+    InvoiceStatus.draft: "Borrador",
+    InvoiceStatus.sent: "Enviada",
+    InvoiceStatus.paid: "Pagada",
+    InvoiceStatus.overdue: "Vencida",
+}
+
+_PAGE_SIZE = 5
+_MAX_LIMIT = 20
+
+
+@register("list_invoices")
+async def handle_list_invoices(
+    tool_input: dict[str, Any],
+    db: AsyncSession,
+    session: ConversationSession,
+) -> str:
+    if session.contractor_id is None:
+        return "Session error: contractor not identified."
+
+    # --- optional client_id filter ---
+    client_id: uuid.UUID | None = None
+    client_name: str | None = None
+    raw_client_id = tool_input.get("client_id")
+    if raw_client_id:
+        try:
+            client_id = uuid.UUID(str(raw_client_id))
+        except ValueError:
+            return "Invalid client_id — must be a UUID."
+        client = await db.get(Client, client_id)
+        if client is None or client.contractor_id != session.contractor_id:
+            return f"Client {client_id} not found."
+        client_name = client.name
+
+    # --- optional date filters ---
+    date_from: date | None = None
+    date_to: date | None = None
+    for key, target in (("date_from", "date_from"), ("date_to", "date_to")):
+        raw = tool_input.get(key)
+        if raw:
+            try:
+                parsed = date.fromisoformat(str(raw))
+            except ValueError:
+                return f"Invalid {key} — use YYYY-MM-DD format."
+            if key == "date_from":
+                date_from = parsed
+            else:
+                date_to = parsed
+
+    # --- optional status filter ---
+    status_filter: InvoiceStatus | None = None
+    raw_status = tool_input.get("status")
+    if raw_status:
+        try:
+            status_filter = InvoiceStatus(str(raw_status))
+        except ValueError:
+            valid = ", ".join(s.value for s in InvoiceStatus)
+            return f"Invalid status — must be one of: {valid}."
+
+    # --- pagination ---
+    try:
+        limit = min(int(tool_input.get("limit", _PAGE_SIZE)), _MAX_LIMIT)
+        offset = max(int(tool_input.get("offset", 0)), 0)
+    except (TypeError, ValueError):
+        limit, offset = _PAGE_SIZE, 0
+
+    # --- build query ---
+    base = (
+        select(Invoice)
+        .where(Invoice.contractor_id == session.contractor_id)
+        .options(selectinload(Invoice.client))
+        .order_by(Invoice.date.desc(), Invoice.created_at.desc())
+    )
+    if client_id:
+        base = base.where(Invoice.client_id == client_id)
+    if date_from:
+        base = base.where(Invoice.date >= date_from)
+    if date_to:
+        base = base.where(Invoice.date <= date_to)
+    if status_filter:
+        base = base.where(Invoice.status == status_filter)
+
+    total_row = await db.execute(select(func.count()).select_from(base.subquery()))
+    total: int = total_row.scalar_one()
+
+    rows = await db.execute(base.offset(offset).limit(limit))
+    invoices = list(rows.scalars().all())
+
+    if not invoices:
+        if offset > 0:
+            return "No hay más facturas."
+        filter_desc = f" de {client_name}" if client_name else ""
+        return f"No hay facturas{filter_desc}."
+
+    # --- build header ---
+    header_parts = ["Facturas"]
+    if status_filter:
+        header_parts.append(_STATUS_ES.get(status_filter, status_filter.value).lower() + "s")
+    if client_name:
+        header_parts.append(f"— {client_name}")
+    header = " ".join(header_parts)
+
+    # --- format rows ---
+    lines = [header]
+    for inv in invoices:
+        d = f"{inv.date.day} {_MONTH_ES[inv.date.month]}"
+        status_label = _STATUS_ES.get(inv.status, inv.status.value)
+        name_part = f" · {inv.client.name}" if not client_name else ""
+        lines.append(
+            f"· {inv.invoice_number}{name_part} · {d} · {float(inv.total):.0f}€ · {status_label}"
+        )
+
+    end = offset + len(invoices)
+    if total > end:
+        lines.append(f"Mostrando {offset + 1}–{end} de {total}. (Ver más)")
+    elif total > _PAGE_SIZE:
+        lines.append(f"Total: {total} facturas.")
+
+    return "\n".join(lines)
