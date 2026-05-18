@@ -5,6 +5,7 @@ import logging
 import sentry_sdk
 from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Query, Request
 from fastapi.responses import PlainTextResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.claude import call_claude
 from app.ai.whisper import transcribe, transcribe_from_meta
@@ -17,15 +18,64 @@ from app.messaging.telegram_sender import send_message as telegram_send
 from app.messaging.types import InboundMessage, MessageSender, MessageType
 from app.messaging.whatsapp_parser import parse_whatsapp
 from app.messaging.whatsapp_sender import send_message as whatsapp_send
-from app.models.session import MessageRole
+from app.models.session import ConversationSession, MessageRole, UserType
 from app.schemas.telegram import TelegramUpdate
 from app.schemas.whatsapp import MetaWebhook
+from app.services.error_report import (
+    ack_message,
+    ask_message,
+    detect_error_intent,
+    detect_language,
+    get_last_assistant_message,
+    save_error_report,
+)
 from app.services.onboarding import handle_onboarding_message
 from app.services.routing import resolve_routing
 from app.services.session import append_message, get_or_create_session
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+
+async def _try_handle_error_report(
+    db: AsyncSession,
+    session: ConversationSession,
+    text: str,
+    channel: str,
+    last_assistant: str | None,
+    send: MessageSender,
+    recipient_id: str,
+) -> bool:
+    """Handle error-report turns. Returns True if the message was consumed."""
+    if session.user_type != UserType.contractor:
+        return False
+
+    if session.context.get("pending_error_report"):
+        lang = detect_language(text)
+        ctx = dict(session.context)
+        ctx.pop("pending_error_report")
+        session.context = ctx
+        await save_error_report(db, session, text, channel)  # commits report + context together
+        reply = ack_message(lang)
+        await append_message(db, session.id, MessageRole.assistant, reply)
+        await send(recipient_id, reply)
+        return True
+
+    is_error, description = detect_error_intent(text, last_assistant)
+    if not is_error:
+        return False
+
+    lang = detect_language(text)
+    if description is not None:
+        await save_error_report(db, session, description, channel)
+        reply = ack_message(lang)
+    else:
+        session.context = {**session.context, "pending_error_report": True}
+        await db.commit()
+        reply = ask_message(lang)
+    await append_message(db, session.id, MessageRole.assistant, reply)
+    await send(recipient_id, reply)
+    return True
 
 
 async def _dispatch(inbound: InboundMessage, send: MessageSender, channel: str) -> None:
@@ -87,6 +137,13 @@ async def _dispatch(inbound: InboundMessage, send: MessageSender, channel: str) 
                 return
 
         await append_message(db, session.id, MessageRole.user, text, media_url=media_url)
+
+        last_assistant = await get_last_assistant_message(db, session.id)
+
+        if await _try_handle_error_report(
+            db, session, text, channel, last_assistant, send, inbound.recipient_id
+        ):
+            return
 
         raw_reply = await call_claude(db, session, text)
         clean_text, options = parse_options(raw_reply)

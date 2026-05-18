@@ -168,10 +168,13 @@ class TestDispatchVoiceFallback:
         from app.api.webhook import _dispatch
 
         mock_send = AsyncMock()
+        mock_session = MagicMock(id="sid")
+        mock_session.context = {}
 
         with patch("app.api.webhook.transcribe", return_value=("Añade a Juan", "https://tg/v")), \
              patch("app.api.webhook.resolve_routing") as mock_routing, \
-             patch("app.api.webhook.get_or_create_session", return_value=MagicMock(id="sid")), \
+             patch("app.api.webhook.get_or_create_session", return_value=mock_session), \
+             patch("app.api.webhook.get_last_assistant_message", return_value=None), \
              patch("app.api.webhook.append_message") as mock_append, \
              patch("app.api.webhook.call_claude", return_value="ok") as mock_claude, \
              patch("app.api.webhook.async_session_factory", return_value=self._db_ctx()):

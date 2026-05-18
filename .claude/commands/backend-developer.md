@@ -55,6 +55,43 @@ def downgrade() -> None:
 
 ---
 
+## Code structure
+
+When a function contains a distinct logical branch that makes it hard to read at a glance, extract it into a private helper (`_name`). The caller should read like a list of steps; the helper owns the details.
+
+```python
+# Good — _dispatch reads as a straight sequence of steps
+if await _try_handle_error_report(db, session, text, channel, last_assistant, send, recipient_id):
+    return
+reply = await call_claude(db, session, text)
+
+# Avoid — inline state machine buried in the middle of a larger function
+if session.context.get("pending_error_report"):
+    ...  # 10 lines
+is_error, description = detect_error_intent(text, last_assistant)
+if is_error:
+    ...  # 10 more lines
+```
+
+The helper should return a bool (consumed / not consumed) or the result it computed, so the caller needs no knowledge of the internals.
+
+Raise exceptions for error conditions rather than returning sentinel values or error strings. Let FastAPI's exception handlers or the caller decide how to respond.
+
+```python
+# Good
+async def get_contractor_or_raise(db: AsyncSession, contractor_id: uuid.UUID) -> Contractor:
+    contractor = await db.get(Contractor, contractor_id)
+    if contractor is None:
+        raise ValueError(f"Contractor {contractor_id} not found")
+    return contractor
+
+# Avoid — callers must check the return value and can silently ignore it
+async def get_contractor(db, contractor_id) -> Contractor | None:
+    return await db.get(Contractor, contractor_id)
+```
+
+---
+
 ## Integration test conventions
 
 - Every integration test file that touches the DB uses the `db: AsyncSession` fixture from `conftest.py` — do not create engines inline.
