@@ -125,6 +125,20 @@ variable "whatsapp_app_secret" {
   default     = ""
 }
 
+# --- Redis ---
+
+variable "redis_node_type" {
+  description = "Scaleway Redis cluster node type"
+  type        = string
+  default     = "RED1-MICRO"
+}
+
+variable "redis_password" {
+  description = "Redis cluster password"
+  type        = string
+  sensitive   = true
+}
+
 # --- Optional: load balancer ---
 
 variable "cloudflare_api_token" {
