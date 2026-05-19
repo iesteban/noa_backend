@@ -172,6 +172,86 @@ _CONTRACTOR_TOOL_LIST: list[dict[str, Any]] = [
         },
     },
     {
+        "name": "list_invoices",
+        "description": (
+            "List the contractor's invoices, most recent first. "
+            "Supports optional filters: client_id, date range, and status. "
+            "Returns up to limit results (default 5) with pagination info. "
+            "Use offset to fetch the next page when the contractor asks to see more."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "client_id": {
+                    "type": "string",
+                    "description": "UUID of the client to filter by. Optional.",
+                },
+                "date_from": {
+                    "type": "string",
+                    "description": "Start date (YYYY-MM-DD). Optional.",
+                },
+                "date_to": {
+                    "type": "string",
+                    "description": "End date (YYYY-MM-DD). Optional.",
+                },
+                "status": {
+                    "type": "string",
+                    "enum": ["draft", "sent", "paid", "overdue"],
+                    "description": "Filter by invoice status. Optional.",
+                },
+                "limit": {
+                    "type": "integer",
+                    "description": "Max results to return. Default 5, max 20.",
+                },
+                "offset": {
+                    "type": "integer",
+                    "description": "Results to skip for pagination. Default 0.",
+                },
+            },
+            "required": [],
+        },
+    },
+    {
+        "name": "list_budgets",
+        "description": (
+            "List the contractor's budgets, most recent first. "
+            "Supports optional filters: client_id, date range, and status. "
+            "Returns up to limit results (default 5) with pagination info. "
+            "Use offset to fetch the next page when the contractor asks to see more."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "client_id": {
+                    "type": "string",
+                    "description": "UUID of the client to filter by. Optional.",
+                },
+                "date_from": {
+                    "type": "string",
+                    "description": "Start date (YYYY-MM-DD). Optional.",
+                },
+                "date_to": {
+                    "type": "string",
+                    "description": "End date (YYYY-MM-DD). Optional.",
+                },
+                "status": {
+                    "type": "string",
+                    "enum": ["draft", "sent", "accepted", "rejected", "invoiced"],
+                    "description": "Filter by budget status. Optional.",
+                },
+                "limit": {
+                    "type": "integer",
+                    "description": "Max results to return. Default 5, max 20.",
+                },
+                "offset": {
+                    "type": "integer",
+                    "description": "Results to skip for pagination. Default 0.",
+                },
+            },
+            "required": [],
+        },
+    },
+    {
         "name": "connect_google_calendar",
         "description": (
             "Generate a one-time link for the contractor to connect their Google Calendar. "

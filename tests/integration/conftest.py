@@ -20,9 +20,11 @@ from app.database import Base
 
 # Import all models so Base.metadata is fully populated for the db fixture.
 from app.models.appointment import Appointment, CalendarToken  # noqa: F401
+from app.models.budget import Budget, BudgetLine, BudgetStatus  # noqa: F401
 from app.models.client import Client
 from app.models.contractor import Channel, Contractor
 from app.models.error_report import ErrorReport  # noqa: F401
+from app.models.invoice import Invoice, InvoiceLine, InvoiceStatus  # noqa: F401
 from app.models.job import Job
 from app.models.session import ConversationSession, Message, MessageRole, UserType
 
@@ -165,6 +167,64 @@ async def make_session(
     db.add(session)
     await db.flush()
     return session
+
+
+async def make_invoice(
+    db: AsyncSession,
+    contractor: Contractor,
+    client: Client,
+    *,
+    invoice_number: str | None = None,
+    invoice_date: date | None = None,
+    total: float = 100.0,
+    status: InvoiceStatus = InvoiceStatus.draft,
+    **overrides: object,
+) -> Invoice:
+    """Insert an Invoice and flush."""
+    import uuid as _uuid
+    from datetime import date as _date
+    defaults: dict[str, object] = {
+        "contractor_id": contractor.id,
+        "client_id": client.id,
+        "invoice_number": invoice_number or f"TEST-{_uuid.uuid4().hex[:6].upper()}",
+        "date": invoice_date or _date.today(),
+        "status": status,
+        "subtotal": round(total / 1.21, 2),
+        "iva_amount": round(total - total / 1.21, 2),
+        "irpf_amount": 0.0,
+        "total": total,
+    }
+    defaults.update(overrides)
+    invoice = Invoice(**defaults)  # type: ignore[arg-type]
+    db.add(invoice)
+    await db.flush()
+    return invoice
+
+
+async def make_budget(
+    db: AsyncSession,
+    contractor: Contractor,
+    client: Client,
+    *,
+    budget_date: date | None = None,
+    total: float = 200.0,
+    status: BudgetStatus = BudgetStatus.draft,
+    **overrides: object,
+) -> Budget:
+    """Insert a Budget and flush."""
+    from datetime import date as _date
+    defaults: dict[str, object] = {
+        "contractor_id": contractor.id,
+        "client_id": client.id,
+        "date": budget_date or _date.today(),
+        "status": status,
+        "total": total,
+    }
+    defaults.update(overrides)
+    budget = Budget(**defaults)  # type: ignore[arg-type]
+    db.add(budget)
+    await db.flush()
+    return budget
 
 
 async def make_message(
