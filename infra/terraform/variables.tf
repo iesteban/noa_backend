@@ -77,17 +77,20 @@ variable "google_client_id" {
   description = "Google OAuth2 client ID for Calendar integration"
   type        = string
   sensitive   = true
+  default     = ""
 }
 
 variable "google_client_secret" {
   description = "Google OAuth2 client secret for Calendar integration"
   type        = string
   sensitive   = true
+  default     = ""
 }
 
 variable "google_redirect_uri" {
   description = "Google OAuth2 redirect URI for Calendar integration"
   type        = string
+  default     = ""
 }
 
 variable "sentry_dsn" {
