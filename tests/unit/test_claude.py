@@ -153,7 +153,9 @@ class TestToolLoop:
         db = AsyncMock()
         db.get = AsyncMock(return_value=cont)
         db.scalar.return_value = 0
-        db.execute.side_effect = [_empty_result(), _empty_result(), _empty_result(), _empty_result()]
+        db.execute.side_effect = [
+            _empty_result(), _empty_result(), _empty_result(), _empty_result()
+        ]
 
         session = _session(contractor_id=cont.id)
 
@@ -178,7 +180,9 @@ class TestToolLoop:
         db = AsyncMock()
         db.get = AsyncMock(return_value=cont)
         db.scalar.return_value = 0
-        db.execute.side_effect = [_empty_result(), _empty_result(), _empty_result(), _empty_result()]
+        db.execute.side_effect = [
+            _empty_result(), _empty_result(), _empty_result(), _empty_result()
+        ]
 
         session = _session(contractor_id=cont.id)
 
@@ -206,7 +210,9 @@ class TestToolLoop:
         db = AsyncMock()
         db.get = AsyncMock(return_value=cont)
         db.scalar.return_value = 0
-        db.execute.side_effect = [_empty_result(), _empty_result(), _empty_result(), _empty_result()]
+        db.execute.side_effect = [
+            _empty_result(), _empty_result(), _empty_result(), _empty_result()
+        ]
 
         session = _session(contractor_id=cont.id)
 
