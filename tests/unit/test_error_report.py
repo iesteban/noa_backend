@@ -76,25 +76,11 @@ class TestDetectErrorIntent:
         assert is_error is True
         assert desc == "falla el cálculo del IVA"
 
-    # --- Post-document "no" ---
-    def test_no_after_invoice_generation(self) -> None:
-        last = "Factura generada. ¿Se la envío a Pedro ahora?"
-        assert detect_error_intent("no", last) == (True, None)
-
-    def test_no_after_budget_generation(self) -> None:
-        last = "Presupuesto generado. ¿Lo envío a Ana?"
-        assert detect_error_intent("no", last) == (True, None)
-
     def test_no_without_last_message(self) -> None:
         assert detect_error_intent("no") == (False, None)
 
-    def test_no_after_non_document_message(self) -> None:
-        last = "¿Qué más necesitas?"
-        assert detect_error_intent("no", last) == (False, None)
-
-    def test_incorrecto_after_document(self) -> None:
-        last = "Factura generada. ¿Se la envío?"
-        is_error, _ = detect_error_intent("incorrecto", last)
+    def test_incorrecto_alone(self) -> None:
+        is_error, _ = detect_error_intent("incorrecto")
         assert is_error is True
 
     # --- No false positives ---
@@ -108,8 +94,7 @@ class TestDetectErrorIntent:
         assert detect_error_intent("no tengo clientes nuevos") == (False, None)
 
     def test_no_in_sentence_without_document_context(self) -> None:
-        last = "Listando facturas pendientes..."
-        assert detect_error_intent("no hay facturas", last) == (False, None)
+        assert detect_error_intent("no hay facturas") == (False, None)
 
 
 class TestDetectLanguage:
