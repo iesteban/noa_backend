@@ -7,6 +7,7 @@ from sqlalchemy import cast, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.types import Date as SADate
 
+from app.ai.handlers.working_hours import format_working_hours, load_working_hours
 from app.config import settings
 from app.models.client import Client
 from app.models.contractor import Contractor
@@ -106,6 +107,10 @@ async def build_contractor_context(db: AsyncSession, contractor: Contractor) -> 
             lines.append(f"- {c.name}  id={c.id}  tel={c.phone_number}")
         if not clients_all:
             lines.append("(sin clientes aún)")
+
+    working_hours = await load_working_hours(db, contractor.id)
+    lines += ["", "## Horario de trabajo"]
+    lines.append(format_working_hours(working_hours))
 
     instr_result = await db.execute(
         select(ContractorInstruction)
