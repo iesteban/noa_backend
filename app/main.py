@@ -1,6 +1,9 @@
+import logging
+
 import sentry_sdk
 from fastapi import FastAPI
 from sentry_sdk.integrations.fastapi import FastApiIntegration
+from sentry_sdk.integrations.logging import LoggingIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 
 from app.ai import handlers as _ai_handlers  # noqa: F401 — registers all tool handlers
@@ -13,7 +16,11 @@ from app.core.sentry import scrub_sensitive_data
 if settings.sentry_dsn:
     sentry_sdk.init(
         dsn=settings.sentry_dsn,
-        integrations=[FastApiIntegration(), SqlalchemyIntegration()],
+        integrations=[
+            FastApiIntegration(),
+            SqlalchemyIntegration(),
+            LoggingIntegration(level=logging.INFO, event_level=logging.ERROR),
+        ],
         traces_sample_rate=0,
         before_send=scrub_sensitive_data,
     )
