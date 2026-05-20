@@ -212,6 +212,23 @@ _CONTRACTOR_TOOL_LIST: list[dict[str, Any]] = [
         },
     },
     {
+        "name": "get_invoice_pdf",
+        "description": (
+            "Return the PDF URL for an already-generated invoice. "
+            "Use this when the contractor asks to retrieve or resend the PDF of a past invoice."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "invoice_number": {
+                    "type": "string",
+                    "description": "Invoice number, e.g. 2025-034.",
+                },
+            },
+            "required": ["invoice_number"],
+        },
+    },
+    {
         "name": "list_budgets",
         "description": (
             "List the contractor's budgets, most recent first. "
