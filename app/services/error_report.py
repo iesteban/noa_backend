@@ -23,15 +23,6 @@ _ERROR_KEYWORDS = [
 
 _COMMANDS = frozenset({"/error", "/reporte"})
 
-# Phrases that indicate the previous assistant message was a generated document.
-_DOCUMENT_INDICATORS = [
-    "factura generada",
-    "presupuesto generado",
-    "se la envio",
-    "lo envio",
-    ".pdf",
-]
-
 _CONTEXT_LIMIT = 5
 
 _ACK: dict[str, str] = {
@@ -61,14 +52,8 @@ def detect_language(text: str) -> str:
     return "en"
 
 
-def _is_document_message(msg: str) -> bool:
-    normalized = _normalize(msg)
-    return any(ind in normalized for ind in _DOCUMENT_INDICATORS)
-
-
 def detect_error_intent(
     text: str,
-    last_assistant_message: str | None = None,
 ) -> tuple[bool, str | None]:
     """Return (is_error_intent, description).
 
@@ -85,12 +70,6 @@ def detect_error_intent(
         if stripped_lower.startswith(cmd + " "):
             rest = stripped[len(cmd):].strip()
             return True, rest or None
-
-    # "no" only triggers as an error when immediately following a bot document.
-    if normalized == "no":
-        if last_assistant_message and _is_document_message(last_assistant_message):
-            return True, None
-        return False, None
 
     # Keyword match (word-boundary, accent-insensitive).
     for kw in _ERROR_KEYWORDS:
