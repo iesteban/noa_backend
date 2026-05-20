@@ -163,7 +163,7 @@ class TestTryHandleErrorReport:
         send = AsyncMock()
 
         consumed = await _try_handle_error_report(
-            db, session, "el importe está mal", "telegram", None, send, "111"
+            db, session, "el importe está mal", "telegram", send, "111"
         )
 
         assert consumed is True
@@ -182,7 +182,7 @@ class TestTryHandleErrorReport:
         send = AsyncMock()
 
         consumed = await _try_handle_error_report(
-            db, session, "está mal", "telegram", None, send, "111"
+            db, session, "está mal", "telegram", send, "111"
         )
 
         assert consumed is False
