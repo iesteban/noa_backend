@@ -39,6 +39,16 @@ output "database_url" {
   sensitive   = true
 }
 
+output "redis_host" {
+  description = "Redis cluster public IP"
+  value       = scaleway_redis_cluster.main.public_network[0].ips[0]
+}
+
+output "redis_port" {
+  description = "Redis cluster port"
+  value       = scaleway_redis_cluster.main.public_network[0].port
+}
+
 output "landing_url" {
   description = "Landing page URL"
   value       = "https://botnoa.com"

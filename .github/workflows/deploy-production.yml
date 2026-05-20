@@ -87,6 +87,7 @@ jobs:
           TF_VAR_whatsapp_access_token: ${{ secrets.PRODUCTION_WHATSAPP_ACCESS_TOKEN }}
           TF_VAR_whatsapp_verify_token: ${{ secrets.PRODUCTION_WHATSAPP_VERIFY_TOKEN }}
           TF_VAR_whatsapp_app_secret: ${{ secrets.PRODUCTION_WHATSAPP_APP_SECRET }}
+          TF_VAR_redis_password: ${{ secrets.PRODUCTION_REDIS_PASSWORD }}
         run: |
           terraform apply -auto-approve \
             -target=scaleway_container.api \

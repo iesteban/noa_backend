@@ -24,6 +24,7 @@ dependencies = [
     "google-api-python-client>=2.0",
     "google-auth-oauthlib>=1.2",
     "sentry-sdk[fastapi]>=2.0",
+    "redis[asyncio]>=5.0",
 ]
 
 [project.optional-dependencies]
@@ -58,4 +59,5 @@ asyncio_mode = "auto"
 testpaths = ["tests"]
 env = [
     "D:DATABASE_URL=postgresql+asyncpg://noa:noa@localhost:5433/noa_test",
+    "D:REDIS_URL=redis://localhost:6379/0",
 ]
