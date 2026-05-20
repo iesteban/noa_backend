@@ -272,9 +272,8 @@ async def handle_list_invoices(
         d = f"{inv.date.day} {_MONTH_ES[inv.date.month]}"
         status_label = _STATUS_ES.get(inv.status, inv.status.value)
         name_part = f" · {inv.client.name}" if not client_name else ""
-        pdf_part = f" · PDF: {inv.pdf_url}" if inv.pdf_url else ""
         lines.append(
-            f"· {inv.invoice_number}{name_part} · {d} · {float(inv.total):.0f}€ · {status_label}{pdf_part}"
+            f"· {inv.invoice_number}{name_part} · {d} · {float(inv.total):.0f}€ · {status_label}"
         )
 
     end = offset + len(invoices)
