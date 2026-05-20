@@ -9,6 +9,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.dispatcher import register
+from app.ai.handlers.working_hours import load_working_hours
 from app.calendar.base import CalendarEvent, CalendarProvider
 from app.calendar.google import GoogleCalendarProvider
 from app.config import settings
@@ -20,6 +21,7 @@ from app.models.appointment import (
     CalendarToken,
 )
 from app.models.session import ConversationSession
+from app.models.working_hours import WorkingHours
 
 logger = logging.getLogger(__name__)
 
@@ -54,22 +56,36 @@ def _compute_free_slots(
     date_from: date,
     date_to: date,
     busy: list[CalendarEvent],
+    working_hours: dict[int, WorkingHours] | None = None,
 ) -> list[tuple[datetime, datetime]]:
     slots: list[tuple[datetime, datetime]] = []
     current = date_from
     while current <= date_to and len(slots) < _MAX_SLOTS:
-        if current.weekday() < 5:  # Mon–Fri
-            slot_start = datetime.combine(current, _WORK_START, tzinfo=UTC)
-            day_end = datetime.combine(current, _WORK_END, tzinfo=UTC)
-            while slot_start + timedelta(minutes=_SLOT_MINUTES) <= day_end:
-                slot_end = slot_start + timedelta(minutes=_SLOT_MINUTES)
-                if not any(
-                    slot_start < ev.ends_at and slot_end > ev.starts_at for ev in busy
-                ):
-                    slots.append((slot_start, slot_end))
-                    if len(slots) >= _MAX_SLOTS:
-                        break
-                slot_start = slot_end
+        dow = current.weekday()
+        if working_hours:
+            wh = working_hours.get(dow)
+            if wh is None or not wh.is_working_day or not wh.start_time or not wh.end_time:
+                current += timedelta(days=1)
+                continue
+            work_start = wh.start_time
+            work_end = wh.end_time
+        else:
+            # Default: Mon–Fri 09:00–18:00
+            if dow >= 5:
+                current += timedelta(days=1)
+                continue
+            work_start = _WORK_START
+            work_end = _WORK_END
+
+        slot_start = datetime.combine(current, work_start, tzinfo=UTC)
+        day_end = datetime.combine(current, work_end, tzinfo=UTC)
+        while slot_start + timedelta(minutes=_SLOT_MINUTES) <= day_end:
+            slot_end = slot_start + timedelta(minutes=_SLOT_MINUTES)
+            if not any(slot_start < ev.ends_at and slot_end > ev.starts_at for ev in busy):
+                slots.append((slot_start, slot_end))
+                if len(slots) >= _MAX_SLOTS:
+                    break
+            slot_start = slot_end
         current += timedelta(days=1)
     return slots
 
@@ -86,6 +102,44 @@ def _format_slots(slots: list[tuple[datetime, datetime]]) -> str:
             prev_date = d
         lines.append(f"  • {start.strftime('%H:%M')}")
     return "\n".join(lines)
+
+
+_DAY_NAMES_ES = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
+
+
+async def _check_working_hours(
+    db: AsyncSession,
+    contractor_id: uuid.UUID,
+    starts_at: datetime,
+) -> str | None:
+    """Return a warning string if starts_at is outside working hours, else None."""
+    schedule = await load_working_hours(db, contractor_id)
+    if not schedule:
+        return None
+
+    dow = starts_at.weekday()
+    wh = schedule.get(dow)
+    day_name = _DAY_NAMES_ES[dow]
+
+    if wh is None:
+        return None
+
+    if not wh.is_working_day:
+        return (
+            f"El {day_name} no está en tu horario habitual. "
+            "¿Confirmas igualmente? (llama a create_appointment con force=true si sí)"
+        )
+
+    appt_time = starts_at.time()
+    if wh.start_time and wh.end_time:
+        if appt_time < wh.start_time or appt_time >= wh.end_time:
+            return (
+                f"Las {starts_at.strftime('%H:%M')} del {day_name} están fuera de tu horario "
+                f"({wh.start_time.strftime('%H:%M')}–{wh.end_time.strftime('%H:%M')}). "
+                "¿Confirmas igualmente? (llama a create_appointment con force=true si sí)"
+            )
+
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -169,6 +223,8 @@ async def handle_get_availability(
         )
 
     provider = _provider or GoogleCalendarProvider(token, db)
+    working_hours = await load_working_hours(db, session.contractor_id)
+
     start_dt = datetime.combine(date_from, _WORK_START, tzinfo=UTC)
     end_dt = datetime.combine(date_to, _WORK_END, tzinfo=UTC)
 
@@ -180,7 +236,7 @@ async def handle_get_availability(
         )
         return "No se pudo consultar el calendario. Inténtalo de nuevo."
 
-    slots = _compute_free_slots(date_from, date_to, busy)
+    slots = _compute_free_slots(date_from, date_to, busy, working_hours or None)
     return _format_slots(slots)
 
 
@@ -216,11 +272,18 @@ async def handle_create_appointment(
         except ValueError:
             return "client_id inválido — debe ser un UUID."
 
+    force = bool(tool_input.get("force", False))
+
     if starts_at.tzinfo is None:
         starts_at = starts_at.replace(tzinfo=UTC)
 
     if starts_at < datetime.now(UTC):
         return "starts_at está en el pasado — usa una fecha y hora futuras."
+
+    if not force:
+        warning = await _check_working_hours(db, session.contractor_id, starts_at)
+        if warning:
+            return warning
 
     appointment = Appointment(
         contractor_id=session.contractor_id,
