@@ -26,12 +26,12 @@ TEMPLATES: list[dict[str, Any]] = [
             {
                 "type": "BODY",
                 "text": "Hola {{1}}, {{2}} quiere organizar una cita de {{3}}.",
+                "example": {"body_text": [["Pedro", "Fontanería García", "fontanería"]]},
             },
             {
                 "type": "BUTTONS",
                 "buttons": [
-                    {"type": "QUICK_REPLY", "text": "Confirmar disponibilidad"},
-                    {"type": "QUICK_REPLY", "text": "No puedo"},
+                    {"type": "QUICK_REPLY", "text": "Citar"},
                 ],
             },
         ],
