@@ -27,6 +27,7 @@ from app.models.error_report import ErrorReport  # noqa: F401
 from app.models.invoice import Invoice, InvoiceLine, InvoiceStatus  # noqa: F401
 from app.models.job import Job
 from app.models.session import ConversationSession, Message, MessageRole, UserType
+from app.models.working_hours import WorkingHours  # noqa: F401
 
 
 def _make_engine():  # type: ignore[return]
@@ -225,6 +226,29 @@ async def make_budget(
     db.add(budget)
     await db.flush()
     return budget
+
+
+async def make_working_hours(
+    db: AsyncSession,
+    contractor: Contractor,
+    day_of_week: int,
+    *,
+    is_working_day: bool = True,
+    start_time: object = None,
+    end_time: object = None,
+) -> WorkingHours:
+    """Insert a WorkingHours row for contractor and flush."""
+    from datetime import time as _time
+    wh = WorkingHours(
+        contractor_id=contractor.id,
+        day_of_week=day_of_week,
+        is_working_day=is_working_day,
+        start_time=start_time or (_time(9, 0) if is_working_day else None),
+        end_time=end_time or (_time(18, 0) if is_working_day else None),
+    )
+    db.add(wh)
+    await db.flush()
+    return wh
 
 
 async def make_message(

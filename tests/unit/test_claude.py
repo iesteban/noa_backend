@@ -78,10 +78,16 @@ def _empty_result() -> MagicMock:
 def _db(contractor: MagicMock) -> AsyncMock:
     db = AsyncMock()
     db.get = AsyncMock(return_value=contractor)
-    # build_contractor_context: scalar() = total client count, execute() x2 = clients + instructions
+    # build_contractor_context: scalar() = total client count,
+    # execute() x3 = clients + working_hours + instructions
     # get_recent_messages: execute() = messages
     db.scalar.return_value = 0
-    db.execute.side_effect = [_empty_result(), _empty_result(), _empty_result()]
+    db.execute.side_effect = [
+        _empty_result(),
+        _empty_result(),
+        _empty_result(),
+        _empty_result(),
+    ]
     return db
 
 
@@ -147,7 +153,9 @@ class TestToolLoop:
         db = AsyncMock()
         db.get = AsyncMock(return_value=cont)
         db.scalar.return_value = 0
-        db.execute.side_effect = [_empty_result(), _empty_result(), _empty_result()]
+        db.execute.side_effect = [
+            _empty_result(), _empty_result(), _empty_result(), _empty_result()
+        ]
 
         session = _session(contractor_id=cont.id)
 
@@ -172,7 +180,9 @@ class TestToolLoop:
         db = AsyncMock()
         db.get = AsyncMock(return_value=cont)
         db.scalar.return_value = 0
-        db.execute.side_effect = [_empty_result(), _empty_result(), _empty_result()]
+        db.execute.side_effect = [
+            _empty_result(), _empty_result(), _empty_result(), _empty_result()
+        ]
 
         session = _session(contractor_id=cont.id)
 
@@ -200,7 +210,9 @@ class TestToolLoop:
         db = AsyncMock()
         db.get = AsyncMock(return_value=cont)
         db.scalar.return_value = 0
-        db.execute.side_effect = [_empty_result(), _empty_result(), _empty_result()]
+        db.execute.side_effect = [
+            _empty_result(), _empty_result(), _empty_result(), _empty_result()
+        ]
 
         session = _session(contractor_id=cont.id)
 

@@ -4,6 +4,9 @@ locals {
   # asyncpg connection string built from RDB outputs.
   # urlencode() the password so special characters (@, &, etc.) don't break URL parsing.
   database_url = "postgresql+asyncpg://${var.db_user}:${urlencode(var.db_password)}@${scaleway_rdb_instance.main.load_balancer[0].ip}:${scaleway_rdb_instance.main.load_balancer[0].port}/${var.db_name}"
+
+  # Redis URL built from cluster outputs. Uses rediss:// (TLS) in production.
+  redis_url = "rediss://noa:${urlencode(var.redis_password)}@${scaleway_redis_cluster.main.public_network[0].ips[0]}:${scaleway_redis_cluster.main.public_network[0].port}/0"
 }
 
 resource "scaleway_container_namespace" "main" {
@@ -54,11 +57,13 @@ resource "scaleway_container" "api" {
     WHATSAPP_ACCESS_TOKEN     = var.whatsapp_access_token
     WHATSAPP_VERIFY_TOKEN     = var.whatsapp_verify_token
     WHATSAPP_APP_SECRET       = var.whatsapp_app_secret
+    REDIS_URL                 = local.redis_url
   }
 
   depends_on = [
     scaleway_rdb_privilege.noa,
     scaleway_iam_policy.bucket_readwrite,
+    scaleway_redis_cluster.main,
   ]
 }
 

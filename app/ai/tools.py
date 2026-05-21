@@ -212,6 +212,23 @@ _CONTRACTOR_TOOL_LIST: list[dict[str, Any]] = [
         },
     },
     {
+        "name": "get_invoice_pdf",
+        "description": (
+            "Return the PDF URL for an already-generated invoice. "
+            "Use this when the contractor asks to retrieve or resend the PDF of a past invoice."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "invoice_number": {
+                    "type": "string",
+                    "description": "Invoice number, e.g. 2025-034.",
+                },
+            },
+            "required": ["invoice_number"],
+        },
+    },
+    {
         "name": "list_budgets",
         "description": (
             "List the contractor's budgets, most recent first. "
@@ -277,7 +294,12 @@ _CONTRACTOR_TOOL_LIST: list[dict[str, Any]] = [
     },
     {
         "name": "create_appointment",
-        "description": "Create an appointment and add it to the contractor's calendar.",
+        "description": (
+            "Create an appointment and add it to the contractor's calendar. "
+            "If the requested time is outside the contractor's working hours the tool returns "
+            "a warning — present it to the contractor and ask for confirmation. "
+            "If they confirm, call again with force=true."
+        ),
         "input_schema": {
             "type": "object",
             "properties": {
@@ -288,6 +310,13 @@ _CONTRACTOR_TOOL_LIST: list[dict[str, Any]] = [
                 },
                 "duration_minutes": {"type": "integer"},
                 "description": {"type": "string"},
+                "force": {
+                    "type": "boolean",
+                    "description": (
+                        "Set to true to create the appointment even if it falls outside "
+                        "the contractor's working hours."
+                    ),
+                },
             },
             "required": ["starts_at", "duration_minutes", "description"],
         },
@@ -333,6 +362,63 @@ _CONTRACTOR_TOOL_LIST: list[dict[str, Any]] = [
                 },
             },
             "required": ["client_id", "file_url"],
+        },
+    },
+    {
+        "name": "set_working_hours",
+        "description": (
+            "Save the contractor's working hours. "
+            "Call this after the contractor states their schedule — confirm the understood "
+            "schedule before calling. "
+            "Pass one entry per day being set; days not included are left unchanged. "
+            "day_of_week: 0=Monday … 6=Sunday."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "schedule": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "day_of_week": {
+                                "type": "integer",
+                                "description": "0=Monday … 6=Sunday.",
+                            },
+                            "is_working_day": {
+                                "type": "boolean",
+                                "description": "false = day off (no slots offered).",
+                            },
+                            "start_time": {
+                                "type": "string",
+                                "description": (
+                                    "Work start time (HH:MM). "
+                                    "Required if is_working_day=true."
+                                ),
+                            },
+                            "end_time": {
+                                "type": "string",
+                                "description": (
+                                    "Work end time (HH:MM). "
+                                    "Required if is_working_day=true."
+                                ),
+                            },
+                        },
+                        "required": ["day_of_week", "is_working_day"],
+                    },
+                    "description": "One entry per day to update.",
+                },
+            },
+            "required": ["schedule"],
+        },
+    },
+    {
+        "name": "get_working_hours",
+        "description": "Return the contractor's configured working hours.",
+        "input_schema": {
+            "type": "object",
+            "properties": {},
+            "required": [],
         },
     },
     {

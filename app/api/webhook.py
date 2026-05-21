@@ -41,7 +41,6 @@ async def _try_handle_error_report(
     session: ConversationSession,
     text: str,
     channel: str,
-    last_assistant: str | None,
     send: MessageSender,
     recipient_id: str,
 ) -> bool:
@@ -60,7 +59,7 @@ async def _try_handle_error_report(
         await send(recipient_id, reply)
         return True
 
-    is_error, description = detect_error_intent(text, last_assistant)
+    is_error, description = detect_error_intent(text)
     if not is_error:
         return False
 
@@ -136,14 +135,11 @@ async def _dispatch(inbound: InboundMessage, send: MessageSender, channel: str) 
                 return
 
         history = await get_recent_messages(db, session.id)
-        last_assistant = next(
-            (m["content"] for m in reversed(history) if m["role"] == "assistant"), None
-        )
 
         await append_message(db, session.id, MessageRole.user, text, media_url=media_url)
 
         if await _try_handle_error_report(
-            db, session, text, channel, last_assistant, send, inbound.recipient_id
+            db, session, text, channel, send, inbound.recipient_id
         ):
             return
 
