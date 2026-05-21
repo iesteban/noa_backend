@@ -26,8 +26,8 @@ TEMPLATES: list[dict[str, Any]] = [
             {
                 "type": "BODY",
                 "text": (
-                    "Hola {{1}}, {{2}} quiere organizarte una cita de {{3}}. "
-                    "¿Qué días y horas te vienen bien?"
+                    "Hola {{1}}, {{2}} quiere coordinar una cita de {{3}}. "
+                    "Responde a este mensaje para confirmar tu disponibilidad."
                 ),
             }
         ],
