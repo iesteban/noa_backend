@@ -25,11 +25,15 @@ TEMPLATES: list[dict[str, Any]] = [
         "components": [
             {
                 "type": "BODY",
-                "text": (
-                    "Hola {{1}}, {{2}} quiere coordinar una cita de {{3}}. "
-                    "Responde a este mensaje para confirmar tu disponibilidad."
-                ),
-            }
+                "text": "Hola {{1}}, {{2}} quiere organizar una cita de {{3}}.",
+            },
+            {
+                "type": "BUTTONS",
+                "buttons": [
+                    {"type": "QUICK_REPLY", "text": "Confirmar disponibilidad"},
+                    {"type": "QUICK_REPLY", "text": "No puedo"},
+                ],
+            },
         ],
     },
 ]
