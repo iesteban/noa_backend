@@ -25,7 +25,7 @@ resource "scaleway_container" "api" {
   cpu_limit      = 1120   # milli-vCPU
   memory_limit   = 1120   # MB (must match cpu_limit in milli-vCPU)
 
-  min_scale = 1   # keep one instance warm — eliminates cold starts for webhooks
+  min_scale = var.min_scale
   max_scale = 5
 
   # The container is accessible through the load balancer only.
