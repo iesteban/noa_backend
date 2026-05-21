@@ -1,0 +1,58 @@
+name: Sync WhatsApp templates
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        default: staging
+        type: choice
+        options:
+          - staging
+          - production
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -e . -q
+
+      - name: Sync templates (staging)
+        if: github.event.inputs.environment == 'staging'
+        env:
+          WHATSAPP_ACCESS_TOKEN: ${{ secrets.STAGING_WHATSAPP_ACCESS_TOKEN }}
+          WHATSAPP_BUSINESS_ACCOUNT_ID: ${{ secrets.STAGING_WHATSAPP_BUSINESS_ACCOUNT_ID }}
+          # Required by app.config even though unused in this script
+          DATABASE_URL: "postgresql+asyncpg://noa:noa@localhost/noa"
+          TELEGRAM_BOT_TOKEN: dummy
+          TELEGRAM_WEBHOOK_SECRET: dummy
+          ANTHROPIC_API_KEY: dummy
+          OPENAI_API_KEY: dummy
+          SCW_ACCESS_KEY: dummy
+          SCW_SECRET_KEY: dummy
+        run: python -m app.scripts.sync_wa_templates
+
+      - name: Sync templates (production)
+        if: github.event.inputs.environment == 'production'
+        env:
+          WHATSAPP_ACCESS_TOKEN: ${{ secrets.PRODUCTION_WHATSAPP_ACCESS_TOKEN }}
+          WHATSAPP_BUSINESS_ACCOUNT_ID: ${{ secrets.PRODUCTION_WHATSAPP_BUSINESS_ACCOUNT_ID }}
+          DATABASE_URL: "postgresql+asyncpg://noa:noa@localhost/noa"
+          TELEGRAM_BOT_TOKEN: dummy
+          TELEGRAM_WEBHOOK_SECRET: dummy
+          ANTHROPIC_API_KEY: dummy
+          OPENAI_API_KEY: dummy
+          SCW_ACCESS_KEY: dummy
+          SCW_SECRET_KEY: dummy
+        run: python -m app.scripts.sync_wa_templates

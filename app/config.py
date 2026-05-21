@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     whatsapp_access_token: str = ""
     whatsapp_verify_token: str = ""
     whatsapp_app_secret: str = ""  # used to validate X-Hub-Signature-256; optional but recommended
+    whatsapp_business_account_id: str = ""
     redis_url: str = "redis://localhost:6379/0"
 
 
