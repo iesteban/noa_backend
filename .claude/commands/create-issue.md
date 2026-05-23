@@ -51,11 +51,11 @@ Filter to open projects only (`closed: false`).
 
 Read these files to understand the product:
 
-- `../noa_knowledge/product/overview.md`
-- `../noa_knowledge/product/data-model.md`
-- `../noa_knowledge/product/ai-architecture.md`
-- `../noa_knowledge/product/conversation-design.md`
-- `../noa_knowledge/product/roadmap.md`
+- `noa_knowledge/product/overview.md`
+- `noa_knowledge/product/data-model.md`
+- `noa_knowledge/product/ai-architecture.md`
+- `noa_knowledge/product/conversation-design.md`
+- `noa_knowledge/product/roadmap.md`
 
 **Step 2 — Diagnose the gap.**
 
