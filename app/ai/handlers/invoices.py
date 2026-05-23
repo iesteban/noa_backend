@@ -131,6 +131,34 @@ async def handle_create_invoice(
     )
 
 
+@register("get_invoice_pdf")
+async def handle_get_invoice_pdf(
+    tool_input: dict[str, Any],
+    db: AsyncSession,
+    session: ConversationSession,
+) -> str:
+    if session.contractor_id is None:
+        return "Session error: contractor not identified."
+
+    invoice_number = str(tool_input.get("invoice_number", "")).strip()
+    if not invoice_number:
+        return "invoice_number is required."
+
+    row = await db.execute(
+        select(Invoice).where(
+            Invoice.invoice_number == invoice_number,
+            Invoice.contractor_id == session.contractor_id,
+        )
+    )
+    invoice = row.scalar_one_or_none()
+    if invoice is None:
+        return f"Invoice {invoice_number} not found."
+    if not invoice.pdf_url:
+        return f"Invoice {invoice_number} has no PDF on file."
+
+    return invoice.pdf_url
+
+
 _MONTH_ES = {
     1: "ene", 2: "feb", 3: "mar", 4: "abr", 5: "may", 6: "jun",
     7: "jul", 8: "ago", 9: "sep", 10: "oct", 11: "nov", 12: "dic",
