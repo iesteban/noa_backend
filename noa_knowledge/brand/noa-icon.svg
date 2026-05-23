@@ -1,0 +1,11 @@
+<svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg" role="img">
+  <title>Noa — icono</title>
+  <!-- Fondo: rounded square brand blue -->
+  <rect width="52" height="52" rx="14" fill="#2563eb"/>
+  <!-- Burbuja de conversación -->
+  <path d="M13 16C13 13.791 14.791 12 17 12H35C37.209 12 39 13.791 39 16V30C39 32.209 37.209 34 35 34H29L23 40V34H17C14.791 34 13 32.209 13 30V16Z" fill="#ffffff"/>
+  <!-- Tres puntos: indicador de escritura AI, opacidad decreciente -->
+  <circle cx="20" cy="23" r="2.2" fill="#2563eb"/>
+  <circle cx="26" cy="23" r="2.2" fill="#2563eb" opacity="0.5"/>
+  <circle cx="32" cy="23" r="2.2" fill="#2563eb" opacity="0.2"/>
+</svg>

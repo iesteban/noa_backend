@@ -1,0 +1,10 @@
+<svg width="120" height="52" viewBox="0 0 120 52" fill="none" xmlns="http://www.w3.org/2000/svg" role="img">
+  <title>Noa — wordmark</title>
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,300&amp;display=swap');
+      .wordmark { font-family: 'Fraunces', Georgia, serif; font-style: italic; font-weight: 300; font-size: 48px; fill: #111827; }
+    </style>
+  </defs>
+  <text x="0" y="44" class="wordmark">Noa</text>
+</svg>
