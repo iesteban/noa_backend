@@ -246,11 +246,8 @@ Read values from `.env.staging` and `.env.production`. Secret names follow the p
 
 ## Key references
 
-`noa_knowledge` must be checked out as a sibling directory (`../noa_knowledge`).
-All paths below are relative to that repo root.
-
-- Product overview: `../noa_knowledge/product/overview.md`
-- Full AI architecture: `../noa_knowledge/product/ai-architecture.md`
-- Data model: `../noa_knowledge/product/data-model.md`
-- Conversation design: `../noa_knowledge/product/conversation-design.md`
-- Architecture decisions: `../noa_knowledge/decisions/`
+- Product overview: `noa_knowledge/product/overview.md`
+- Full AI architecture: `noa_knowledge/product/ai-architecture.md`
+- Data model: `noa_knowledge/product/data-model.md`
+- Conversation design: `noa_knowledge/product/conversation-design.md`
+- Architecture decisions: `noa_knowledge/decisions/`

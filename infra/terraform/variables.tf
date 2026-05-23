@@ -157,6 +157,12 @@ variable "cloudflare_zone_id" {
   default     = ""
 }
 
+variable "min_scale" {
+  description = "Minimum number of container replicas. Set to 1 to keep an instance warm (no cold starts); 0 to allow scale-to-zero."
+  type        = number
+  default     = 0
+}
+
 variable "enable_lb" {
   description = "Whether to deploy a load balancer (static IP, custom domain). Disable in dev to save ~€15/month."
   type        = bool
