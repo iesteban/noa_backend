@@ -21,6 +21,7 @@ The paying user. One row per autónomo.
 | iva_rate | numeric | default 21% |
 | irpf_rate | numeric | default 15% |
 | channel | enum | whatsapp, telegram, both |
+| last_channel | enum | whatsapp, telegram — nullable; last channel the contractor wrote on; null → default to WhatsApp for outreach |
 | telegram_chat_id | varchar | nullable |
 | whatsapp_chat_id | varchar | nullable |
 | onboarded_at | timestamp | null until onboarding complete |
@@ -41,6 +42,7 @@ A contractor's customer. `(contractor_id, phone_number)` is unique — the same 
 | address | text | nullable |
 | email | varchar | nullable |
 | notes | text | free-form notes the contractor has added |
+| last_channel | enum | whatsapp, telegram — nullable; last channel the client wrote on; null → default to WhatsApp for outreach |
 | is_business | boolean | default false — business clients and autónomos have IRPF deducted; individuals do not |
 
 **Routing logic:** look up `phone_number` across all clients. If matched to 1 contractor → route directly. If matched to N contractors → disambiguation prompt. If no match → unknown user flow.
