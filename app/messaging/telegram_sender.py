@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 _BASE = "https://api.telegram.org/bot{token}"
 _SEND_MESSAGE_URL = _BASE + "/sendMessage"
 _ANSWER_CALLBACK_URL = _BASE + "/answerCallbackQuery"
+_EDIT_REPLY_MARKUP_URL = _BASE + "/editMessageReplyMarkup"
 
 # Telegram inline buttons are readable up to 8 per message; above that we fall
 # back to a numbered plain-text list so the user can still reply by typing.
@@ -58,3 +59,24 @@ async def ack_callback_query(callback_query_id: str) -> None:
             await client.post(url, json={"callback_query_id": callback_query_id})
     except Exception:
         logger.warning("Failed to ack Telegram callback_query %s", callback_query_id)
+
+
+async def remove_inline_keyboard(chat_id: str, message_id: int) -> None:
+    """Remove the inline keyboard from a bot message immediately after a button is tapped."""
+    url = _EDIT_REPLY_MARKUP_URL.format(token=settings.telegram_bot_token)
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            await client.post(
+                url,
+                json={
+                    "chat_id": int(chat_id),
+                    "message_id": message_id,
+                    "reply_markup": {"inline_keyboard": []},
+                },
+            )
+    except Exception:
+        logger.warning(
+            "Failed to remove inline keyboard from message %d in chat %s",
+            message_id,
+            chat_id,
+        )

@@ -19,6 +19,8 @@ def parse_whatsapp(webhook: MetaWebhook) -> InboundMessage | None:
     phone_number = f"+{message.from_}"
     update_id = abs(hash(message.id)) & 0x7FFF_FFFF
 
+    wamid = message.id
+
     if message.type == "audio" and message.audio:
         return InboundMessage(
             update_id=update_id,
@@ -27,6 +29,7 @@ def parse_whatsapp(webhook: MetaWebhook) -> InboundMessage | None:
             message_type=MessageType.voice,
             text=None,
             file_id=message.audio.id,
+            external_id=wamid,
         )
 
     if message.type == "image" and message.image:
@@ -37,6 +40,7 @@ def parse_whatsapp(webhook: MetaWebhook) -> InboundMessage | None:
             message_type=MessageType.photo,
             text=message.image.caption,
             file_id=message.image.id,
+            external_id=wamid,
         )
 
     if message.type == "document" and message.document:
@@ -47,6 +51,7 @@ def parse_whatsapp(webhook: MetaWebhook) -> InboundMessage | None:
             message_type=MessageType.document,
             text=message.document.caption,
             file_id=message.document.id,
+            external_id=wamid,
         )
 
     if message.type == "contacts" and message.contacts:
@@ -73,6 +78,7 @@ def parse_whatsapp(webhook: MetaWebhook) -> InboundMessage | None:
             message_type=MessageType.contact,
             text=text,
             file_id=None,
+            external_id=wamid,
         )
 
     if message.type == "interactive" and message.interactive:
@@ -91,6 +97,7 @@ def parse_whatsapp(webhook: MetaWebhook) -> InboundMessage | None:
                 message_type=MessageType.text,
                 text=tapped,
                 file_id=None,
+                external_id=wamid,
             )
 
     if message.type == "text" and message.text:
@@ -101,6 +108,7 @@ def parse_whatsapp(webhook: MetaWebhook) -> InboundMessage | None:
             message_type=MessageType.text,
             text=message.text.body,
             file_id=None,
+            external_id=wamid,
         )
 
     return InboundMessage(
@@ -110,4 +118,5 @@ def parse_whatsapp(webhook: MetaWebhook) -> InboundMessage | None:
         message_type=MessageType.unknown,
         text=None,
         file_id=None,
+        external_id=wamid,
     )

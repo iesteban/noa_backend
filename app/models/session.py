@@ -46,6 +46,7 @@ class ConversationSession(PrimaryKeyMixin, TimestampMixin, Base):
 
 class Message(PrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "messages"
+    __table_args__ = (Index("ix_messages_external_id", "external_id", unique=True),)
 
     session_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("conversation_sessions.id"), nullable=False, index=True
@@ -53,5 +54,6 @@ class Message(PrimaryKeyMixin, TimestampMixin, Base):
     role: Mapped[MessageRole] = mapped_column(Enum(MessageRole), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     media_url: Mapped[str | None] = mapped_column(String(500))
+    external_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     session: Mapped[ConversationSession] = relationship(back_populates="messages")
