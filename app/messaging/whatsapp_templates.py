@@ -71,6 +71,23 @@ async def _create(
     logger.info("Created template %r (status: %s)", template["name"], r.json().get("status"))
 
 
+async def _delete(
+    client: httpx.AsyncClient,
+    access_token: str,
+    waba_id: str,
+    name: str,
+) -> None:
+    r = await client.delete(
+        f"{_GRAPH_API}/{waba_id}/message_templates",
+        headers=_headers(access_token),
+        params={"name": name},
+    )
+    if not r.is_success:
+        logger.warning("Delete template %r returned %s: %s", name, r.status_code, r.text)
+    else:
+        logger.info("Deleted template %r", name)
+
+
 async def _update(
     client: httpx.AsyncClient,
     access_token: str,
@@ -83,6 +100,8 @@ async def _update(
         headers=_headers(access_token),
         json={"components": components},
     )
+    if not r.is_success:
+        logger.error("Update template %r returned %s: %s", name, r.status_code, r.text)
     r.raise_for_status()
     logger.info("Updated template %r — re-submitted for approval", name)
 
@@ -150,22 +169,29 @@ async def sync_templates(access_token: str, waba_id: str) -> None:
         pending: list[str] = []
         for template in TEMPLATES:
             name = template["name"]
-            if name not in existing_by_name:
+            remote = existing_by_name.get(name)
+            if remote is None:
                 logger.info("Template %r not found — creating", name)
                 await _create(client, access_token, waba_id, template)
                 pending.append(name)
-            elif _needs_update(template, existing_by_name[name]):
+            elif remote.get("status") == "REJECTED":
+                # Meta returns 400 on update attempts for rejected templates — delete and recreate.
+                logger.info("Template %r is REJECTED — deleting and recreating", name)
+                await _delete(client, access_token, waba_id, name)
+                await _create(client, access_token, waba_id, template)
+                pending.append(name)
+            elif _needs_update(template, remote):
                 logger.info("Template %r content changed — updating", name)
                 await _update(
                     client,
                     access_token,
-                    existing_by_name[name]["id"],
+                    remote["id"],
                     name,
                     template["components"],
                 )
                 pending.append(name)
             else:
-                status = existing_by_name[name].get("status", "UNKNOWN")
+                status = remote.get("status", "UNKNOWN")
                 if status != "APPROVED":
                     logger.warning("Template %r exists but status is %s", name, status)
                     pending.append(name)
