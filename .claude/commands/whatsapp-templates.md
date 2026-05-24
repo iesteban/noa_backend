@@ -1,75 +1,103 @@
 # WhatsApp Template Skill
 
 Help design, validate, add, and sync WhatsApp message templates for Noa.
+All templates live in `app/messaging/whatsapp_templates.py` under the `TEMPLATES` list.
+The sync workflow is `.github/workflows/sync-wa-templates.yml` (manual `workflow_dispatch`).
 
 ---
 
-You are helping manage WhatsApp Business API message templates for the Noa backend.
+## When invoked
 
-Your job is to:
-1. Understand what the template needs to do
-2. Design the template components
-3. Run a **rejection risk check** against Meta's known rules before writing any code
-4. Add the template to `app/messaging/whatsapp_templates.py` only if risk is LOW or MEDIUM with the user's approval
-5. Optionally sync templates to staging or production via CI
-
-If the user asks to **sync** templates (rather than create one), jump directly to [Step 6 — Sync to Meta](#step-6--sync-to-meta).
+- **"Create / add a template"** → follow Steps 1–5 below
+- **"Check / validate templates"** → read `app/messaging/whatsapp_templates.py`, run the rejection risk check (Step 3) on every template, report results
+- **"Sync templates"** → jump to [Sync to Meta](#sync-to-meta)
 
 ---
 
 ## Step 1 — Gather requirements
 
-Ask the user (or infer from context) what the template is for:
+Ask (or infer from context):
 - What triggers this message? (appointment confirmed, invoice sent, payment reminder, etc.)
 - Who receives it? (contractor or client)
 - What variables are needed? (name, amount, date, etc.)
 - Does it need an action button? (QUICK_REPLY, call, URL)
 - What category fits? (UTILITY, MARKETING, AUTHENTICATION)
 
-If the user already described the template, skip directly to designing it.
-
 ---
 
 ## Step 2 — Design the template
 
-Design the template following this structure:
+```python
+{
+    "name": "snake_case_name",           # lowercase, digits, underscores only
+    "language": "es",                    # ISO 639-1 code
+    "category": "UTILITY",               # UTILITY | MARKETING | AUTHENTICATION
+    "components": [
+        {"type": "HEADER", ...},         # optional
+        {"type": "BODY", ...},           # required
+        {"type": "FOOTER", ...},         # optional
+        {"type": "BUTTONS", ...},        # optional
+    ],
+}
+```
+
+### HEADER (optional, max 1)
+
+| Format | Limit | Notes |
+|--------|-------|-------|
+| TEXT | 60 chars, max 1 variable | Renders bold above body |
+| IMAGE | 5 MB, JPEG/PNG, 800×418px | |
+| VIDEO | 16 MB, MP4/3GP, <60s | |
+| DOCUMENT | 100 MB, PDF/DOC/DOCX/XLS/XLSX/PPT/PPTX | |
+| LOCATION | Static pin, coords supplied at send time | |
+
+```python
+{"type": "HEADER", "format": "TEXT", "text": "Presupuesto Generado"}
+{"type": "HEADER", "format": "IMAGE", "example": {"header_url": ["https://..."]}}
+```
+
+### BODY (required, exactly 1)
+
+- Max **1024 characters** total (across header + body + footer + buttons)
+- Variables: `{{1}}`, `{{2}}`, `{{3}}` — positional, sequential, no gaps
+- Do **not** start or end body text with a variable
+- Do **not** place two variables adjacent to each other
+- Every variable **must** have a sample value in `example.body_text`
+- Markdown formatting supported: `*bold*`, `_italic_`, `~strikethrough~`
 
 ```python
 {
-    "name": "<snake_case_name>",          # lowercase, underscores only
-    "language": "es",                      # BCP-47 code
-    "category": "<UTILITY|MARKETING|AUTHENTICATION>",
-    "components": [
-        # HEADER (optional)
-        {
-            "type": "HEADER",
-            "format": "TEXT",              # or IMAGE, DOCUMENT, VIDEO
-            "text": "...",                 # max 60 chars; variables allowed: {{1}}
-            "example": {"header_text": ["example value"]},  # required if variables used
-        },
-        # BODY (required)
-        {
-            "type": "BODY",
-            "text": "...",                 # max 1024 chars; variables: {{1}}, {{2}}, ...
-            "example": {"body_text": [["val1", "val2"]]},  # REQUIRED if any {{N}} used
-        },
-        # FOOTER (optional)
-        {
-            "type": "FOOTER",
-            "text": "...",                 # max 60 chars; NO variables
-        },
-        # BUTTONS (optional, but strongly recommended for UTILITY templates)
-        {
-            "type": "BUTTONS",
-            "buttons": [
-                # QUICK_REPLY: max 3 buttons, text max 25 chars
-                {"type": "QUICK_REPLY", "text": "Confirmar"},
-                # CALL_TO_ACTION — phone
-                {"type": "PHONE_NUMBER", "text": "Llamar", "phone_number": "+34..."},
-                # CALL_TO_ACTION — URL (max 2 CTAs total)
-                {"type": "URL", "text": "Ver factura", "url": "https://..."},
-            ],
-        },
+    "type": "BODY",
+    "text": "Hola {{1}}, {{2}} quiere organizar una cita de {{3}}.",
+    "example": {"body_text": [["Ana", "Fontanería García", "fontanería"]]},
+}
+```
+
+### FOOTER (optional, max 1)
+
+- Max **60 characters** — plain text only, no variables, no markdown
+
+```python
+{"type": "FOOTER", "text": "Responde STOP para cancelar"}
+```
+
+### BUTTONS (optional)
+
+| Type | Max per template | Text limit | Notes |
+|------|-----------------|------------|-------|
+| QUICK_REPLY | 10 | 25 chars | Sends button text back as user message |
+| URL | 2 | 25 chars text, 2000 chars URL | Supports 1 variable at end of URL |
+| PHONE_NUMBER | 1 | 25 chars | Opens dialer |
+| OTP / COPY_CODE | 1 | fixed text | AUTHENTICATION only |
+
+**Rules:** max 10 buttons total; same-type buttons must be grouped consecutively; OTP cannot mix with other types.
+
+```python
+{
+    "type": "BUTTONS",
+    "buttons": [
+        {"type": "QUICK_REPLY", "text": "Confirmar disponibilidad"},
+        {"type": "QUICK_REPLY", "text": "No puedo"},
     ],
 }
 ```
@@ -78,100 +106,90 @@ Design the template following this structure:
 
 ## Step 3 — Rejection risk check
 
-Before writing any code, evaluate the template against every rule below. For each rule, mark ✅ PASS, ⚠️ WARN, or ❌ FAIL.
+Before writing any code, evaluate every rule below. Mark ✅ PASS, ⚠️ WARN, or ❌ FAIL.
 
-### Category rules
-- ❌ FAIL if UTILITY template contains promotional language (discounts, offers, "gratis", "oferta", "descuento", "promoción", urgency like "¡Último día!")
-- ❌ FAIL if MARKETING template is being sent to people who haven't opted in to marketing
-- ⚠️ WARN if the template purpose is ambiguous between UTILITY and MARKETING
+### Category
+- ❌ FAIL — UTILITY template contains promotional language ("gratis", "oferta", "descuento", "promoción", urgency like "¡Último día!")
+- ❌ FAIL — MARKETING template sent to users without explicit opt-in
+- ⚠️ WARN — template purpose is ambiguous between UTILITY and MARKETING
 
-### Body text rules
-- ❌ FAIL if body > 1024 characters
-- ❌ FAIL if body contains a raw URL (use a URL button instead)
-- ❌ FAIL if variables are not sequential starting at {{1}} (e.g. {{1}}, {{3}} without {{2}} is invalid)
-- ❌ FAIL if any variable is used but no `example` value is provided for it
-- ⚠️ WARN if body asks the user to "reply to this message" as a workaround for missing buttons — Meta flags this
-- ⚠️ WARN if body makes any claim that could be seen as misleading
-- ⚠️ WARN if body contains ALL CAPS words (looks spammy)
+### Body text
+- ❌ FAIL — body > 1024 characters
+- ❌ FAIL — body contains a raw URL (use a URL button instead)
+- ❌ FAIL — variables are not sequential from {{1}} (e.g. {{1}}, {{3}} without {{2}})
+- ❌ FAIL — any variable used without a corresponding `example` value
+- ❌ FAIL — body starts or ends with `{{N}}`
+- ❌ FAIL — two variables appear adjacent to each other
+- ❌ FAIL — body is an open-ended question without QUICK_REPLY buttons (instant rejection)
+- ⚠️ WARN — body asks user to "reply to this message" as a button workaround
+- ⚠️ WARN — body contains ALL CAPS words (looks spammy)
 
-### Header rules
-- ❌ FAIL if header text > 60 characters
-- ❌ FAIL if header has variables but no `example` provided
-- ❌ FAIL if footer contains variables (footer variables are not supported)
+### Header
+- ❌ FAIL — header text > 60 characters
+- ❌ FAIL — header has variables but no `example` provided
 
-### Footer rules
-- ❌ FAIL if footer > 60 characters
+### Footer
+- ❌ FAIL — footer > 60 characters
+- ❌ FAIL — footer contains variables (not supported)
 
-### Button rules
-- ❌ FAIL if more than 3 QUICK_REPLY buttons
-- ❌ FAIL if more than 2 CALL_TO_ACTION buttons (PHONE_NUMBER + URL combined)
-- ❌ FAIL if any button text > 25 characters
-- ❌ FAIL if QUICK_REPLY and CALL_TO_ACTION buttons are mixed (they cannot coexist)
-- ⚠️ WARN if UTILITY template has no buttons — Meta strongly prefers interactive elements for utility messages
+### Buttons
+- ❌ FAIL — more than 10 buttons total
+- ❌ FAIL — any button text > 25 characters
+- ❌ FAIL — QUICK_REPLY and CTA (URL/PHONE_NUMBER) buttons mixed in the same template
+- ⚠️ WARN — UTILITY template has no buttons (Meta strongly prefers interactive elements)
 
-### Template name rules
-- ❌ FAIL if name contains uppercase letters or spaces
-- ❌ FAIL if name is longer than 512 characters
-- ⚠️ WARN if the name is very generic (e.g. "message", "notification") — Meta may flag for ambiguity
+### Template name
+- ❌ FAIL — name contains uppercase letters or spaces
+- ⚠️ WARN — name is very generic (e.g. "message", "notification")
 
-### Language rules
-- ❌ FAIL if language is not a valid BCP-47 code (valid examples: `es`, `es_ES`, `en_US`, `ca`)
+### Language
+- ❌ FAIL — not a valid BCP-47 code
 
-### Example values rules
-- ❌ FAIL if any `{{N}}` variable in body, header, or buttons lacks a corresponding example value
-- ⚠️ WARN if example values look like placeholders ("ejemplo", "test", "xxx") — use realistic values
+### Example values
+- ❌ FAIL — any `{{N}}` variable lacks a corresponding example value
+- ⚠️ WARN — example values look like placeholders ("test", "xxx", "ejemplo")
 
 ---
 
 ## Step 4 — Report and decide
 
-Present the full risk report:
-
 ```
 ## Rejection Risk: LOW / MEDIUM / HIGH
 
 ### Checks
-✅ Category: UTILITY — body is transactional, no promotional language
-✅ Body length: 87 chars (limit: 1024)
-✅ Variables: sequential {{1}}, {{2}}, {{3}} with examples provided
+✅ Category: UTILITY — transactional, no promotional language
+✅ Body length: 53 chars (limit: 1024)
+✅ Variables: sequential {{1}}, {{2}}, {{3}} with realistic examples
 ✅ Buttons: 1 QUICK_REPLY within limit
-⚠️ WARN: No footer — not required, but common for Noa templates
+⚠️ WARN: ...
 ❌ FAIL: ...
 
 ### Verdict
-[If LOW/MEDIUM] Template looks approvable. Proceeding to add it.
-[If HIGH]       Fix the ❌ FAIL items above before submitting. Suggest fixes.
+[LOW/MEDIUM] Proceeding to add.
+[HIGH] Fix ❌ FAIL items above. Suggest corrected design and loop back to Step 2.
 ```
 
-- **LOW risk** (no FAILs, ≤1 WARN): proceed automatically
-- **MEDIUM risk** (no FAILs, 2+ WARNs): show report and ask user to confirm before adding
-- **HIGH risk** (any FAIL): do NOT add to code — show the failures and suggest a corrected design, then loop back to Step 2
+- **LOW** (no FAILs, ≤1 WARN) → proceed automatically
+- **MEDIUM** (no FAILs, 2+ WARNs) → show report, ask for confirmation
+- **HIGH** (any FAIL) → do NOT add to code
 
 ---
 
 ## Step 5 — Add to codebase
 
-Once risk is LOW or MEDIUM (with approval):
-
 1. Read `app/messaging/whatsapp_templates.py`
 2. Append the new template dict to the `TEMPLATES` list
-3. Show the diff
-
-Do not modify anything else in the file.
+3. Show the diff — do not modify anything else in the file
 
 ---
 
-## Step 6 — Sync to Meta
+## Sync to Meta
 
-The sync workflow (`sync-wa-templates.yml`) submits all templates in `TEMPLATES` to the Meta Graph API and polls until each is APPROVED or REJECTED. It is triggered manually via CI.
+The sync workflow submits all `TEMPLATES` to the Meta Graph API and polls until each is APPROVED or REJECTED.
 
-### When to sync
+### Trigger
 
-Sync any time `app/messaging/whatsapp_templates.py` changes — new template added, body text edited, buttons changed. No need to sync if only comments or non-template code changed.
-
-### How to trigger
-
-Always ask the user which environment to target (staging or production) before triggering. Default to staging unless explicitly told otherwise.
+Always confirm the environment before triggering. Default to staging.
 
 ```bash
 # Staging
@@ -181,66 +199,74 @@ gh workflow run sync-wa-templates.yml --ref main --field environment=staging
 gh workflow run sync-wa-templates.yml --ref main --field environment=production
 ```
 
-After triggering, get the run URL and poll until complete:
-
+Poll until done:
 ```bash
-# Get the run ID (wait a moment for it to register)
 gh run list --workflow=sync-wa-templates.yml --limit=1
-
-# Poll until done
 gh run watch <run-id>
-
-# Or check logs if it fails
-gh run view <run-id> --log-failed
+gh run view <run-id> --log-failed   # if it fails
 ```
 
 ### What the sync does
 
-1. Lists all existing templates in the Meta account
+1. Lists existing templates in the Meta account
 2. For each template in `TEMPLATES`:
    - **Not found** → creates it, waits for approval
+   - **REJECTED** → deletes and recreates (Meta returns 400 on update of rejected templates)
    - **Body changed** → updates it, re-submits for approval
    - **Unchanged + APPROVED** → skips
    - **Unchanged + not APPROVED** → waits for approval
-3. Polls every 10s up to 300s for all pending templates to reach APPROVED
-4. Raises `RuntimeError` if any template is REJECTED — the CI step fails
+3. Polls every 10s up to 300s for `APPROVED`; raises on `REJECTED`
 
 ### If the sync fails with REJECTED
 
-1. Check which template was rejected in the CI logs
-2. Run the rejection risk check (Steps 3–4 above) on that template
-3. Fix the ❌ FAIL items, commit, push
-4. Re-trigger the sync workflow
+Check the rejection reason directly from Meta:
+
+```bash
+source .env.staging && curl -s \
+  "https://graph.facebook.com/v19.0/${WHATSAPP_BUSINESS_ACCOUNT_ID}/message_templates\
+?fields=id,name,status,rejected_reason,components&access_token=${WHATSAPP_ACCESS_TOKEN}" \
+  | python3 -m json.tool
+```
+
+Then re-run the rejection risk check (Step 3) and fix any ❌ FAIL items.
 
 ### Environments
 
-| Environment | Secret names used |
-|-------------|------------------|
+| Environment | Secrets |
+|-------------|---------|
 | staging | `STAGING_WHATSAPP_ACCESS_TOKEN`, `STAGING_WHATSAPP_BUSINESS_ACCOUNT_ID` |
 | production | `PRODUCTION_WHATSAPP_ACCESS_TOKEN`, `PRODUCTION_WHATSAPP_BUSINESS_ACCOUNT_ID` |
 
-Both environments use the same template definitions from `TEMPLATES`. There is no per-environment template registry.
+---
+
+## Rejection reason codes
+
+| Code | Meaning | Fix |
+|------|---------|-----|
+| `INVALID_FORMAT` | Structure malformed | Check component order, variable syntax, char limits. If body solicits a response, add QUICK_REPLY buttons. |
+| `TAG_CONTENT_MISMATCH` | Category doesn't match content | Move promotional content to MARKETING; strip promo language from UTILITY |
+| `INVALID_PARAMETER` | Variable syntax wrong | Ensure `{{N}}` notation, sequential, no spaces inside braces |
+| `DUPLICATE_TEMPLATE` | Identical body/footer already exists | Change wording or delete the duplicate first |
+| `ABUSIVE_CONTENT` | Policy violation | Remove sensitive data requests, illegal or threatening content |
+| `NONE` (with REJECTED) | Automated content policy catch-all | Simplify body, remove solicitations, add sample values |
+
+**Instant rejection** (seconds) = automated check: open-ended question in UTILITY, body starts/ends with `{{N}}`, missing sample values, adjacent variables.
+
+**Delayed rejection** (hours) = human review. Usually a content policy edge case.
 
 ---
 
-## Meta policy reference (quick lookup)
+## Quality & lifecycle
 
-| Rule | Limit |
-|------|-------|
-| Body text | max 1024 chars |
-| Header text | max 60 chars |
-| Footer text | max 60 chars |
-| Button text | max 25 chars |
-| QUICK_REPLY buttons | max 3 |
-| CTA buttons (phone + URL) | max 2 total |
-| Variables must have examples | always |
-| QUICK_REPLY + CTA mixed | not allowed |
-| Raw URLs in body | not allowed |
-| Promotional language in UTILITY | not allowed |
-| Template name | lowercase + underscores only |
+- New or low-quality templates have delivery throttled while Meta collects feedback
+- Quality drops when users block or report the message — pause schedule: 3h → 6h → permanent disable
+- Avoid: multiple messages to same user in quick succession, vague personalization, urgency tactics
 
-### Common rejection reasons (from Noa's history)
-- Missing `example` values for `{{N}}` variables → always include them
-- Asking users to "reply to this message" instead of using a button → use QUICK_REPLY
-- Body text that reads like marketing inside a UTILITY template
-- URL in body text instead of a URL button
+---
+
+## Approved template reference (staging)
+
+| Name | Category | Status | Notes |
+|------|----------|--------|-------|
+| `presupuesto_generado` | — | APPROVED | Has HEADER + BODY + QUICK_REPLY — use as structural reference |
+| `appointment_request` | UTILITY | REJECTED (INVALID_FORMAT) | Fixed: added sample values + QUICK_REPLY button |

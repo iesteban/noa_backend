@@ -24,6 +24,9 @@ dev_machine_ip          = "CHANGE_ME"   # your external IP — run: curl https:/
 # Redis
 redis_node_type = "RED1-MICRO"
 
+# Set to 1 to keep an instance warm (no cold starts); 0 to allow scale-to-zero
+min_scale = 0
+
 # Set to false in dev to save ~€15/month (no static IP or custom domain needed)
 enable_lb = true
 

@@ -1,15 +1,16 @@
 Read the following files from the Noa knowledge base, then confirm you are ready to work on noa_backend with a one-paragraph brief:
 
-- `../noa_knowledge/product/overview.md`
-- `../noa_knowledge/product/ai-architecture.md`
-- `../noa_knowledge/product/data-model.md`
-- `../noa_knowledge/product/conversation-design.md`
-- `../noa_knowledge/product/roadmap.md`
-- `../noa_knowledge/product/personas.md`
-- `../noa_knowledge/decisions/001-bot-first-no-native-app.md`
-- `../noa_knowledge/decisions/002-prompt-caching.md`
-- `../noa_knowledge/decisions/003-object-storage-scaleway.md`
-- `../noa_knowledge/decisions/004-calendar-abstraction.md`
+- `noa_knowledge/agents/product-context.md`
+- `noa_knowledge/product/overview.md`
+- `noa_knowledge/product/ai-architecture.md`
+- `noa_knowledge/product/data-model.md`
+- `noa_knowledge/product/conversation-design.md`
+- `noa_knowledge/product/roadmap.md`
+- `noa_knowledge/product/personas.md`
+- `noa_knowledge/decisions/001-bot-first-no-native-app.md`
+- `noa_knowledge/decisions/002-prompt-caching.md`
+- `noa_knowledge/decisions/003-object-storage-scaleway.md`
+- `noa_knowledge/decisions/004-calendar-abstraction.md`
 
 After reading, reply with:
 
