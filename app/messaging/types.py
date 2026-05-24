@@ -22,6 +22,7 @@ class InboundMessage(BaseModel):
     message_type: MessageType
     text: str | None
     file_id: str | None
+    external_id: str | None = None  # platform message ID for deduplication (e.g. WhatsApp wamid)
 
 
 class MessageSender(Protocol):

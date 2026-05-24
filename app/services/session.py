@@ -69,12 +69,14 @@ async def append_message(
     role: MessageRole,
     content: str,
     media_url: str | None = None,
+    external_id: str | None = None,
 ) -> Message:
     message = Message(
         session_id=session_id,
         role=role,
         content=content,
         media_url=media_url,
+        external_id=external_id,
     )
     db.add(message)
     await db.commit()

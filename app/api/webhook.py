@@ -5,6 +5,7 @@ import logging
 import sentry_sdk
 from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Query, Request
 from fastapi.responses import PlainTextResponse
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.claude import call_claude, get_recent_messages
@@ -13,12 +14,12 @@ from app.config import settings
 from app.database import async_session_factory
 from app.messaging.options import parse_options
 from app.messaging.parser import parse_update
-from app.messaging.telegram_sender import ack_callback_query
+from app.messaging.telegram_sender import ack_callback_query, remove_inline_keyboard
 from app.messaging.telegram_sender import send_message as telegram_send
 from app.messaging.types import InboundMessage, MessageSender, MessageType
 from app.messaging.whatsapp_parser import parse_whatsapp
 from app.messaging.whatsapp_sender import send_message as whatsapp_send
-from app.models.session import ConversationSession, MessageRole, UserType
+from app.models.session import ConversationSession, Message, MessageRole, UserType
 from app.schemas.telegram import TelegramUpdate
 from app.schemas.whatsapp import MetaWebhook
 from app.services.error_report import (
@@ -108,6 +109,16 @@ async def _dispatch(inbound: InboundMessage, send: MessageSender, channel: str) 
             routing=routing,
         )
 
+        if inbound.external_id is not None:
+            result = await db.execute(
+                select(Message.id)
+                .where(Message.external_id == inbound.external_id)
+                .limit(1)
+            )
+            if result.scalar_one_or_none() is not None:
+                logger.info("Duplicate webhook %s — skipping", inbound.external_id)
+                return
+
         if inbound.message_type == MessageType.unknown:
             await send(
                 inbound.recipient_id,
@@ -136,7 +147,10 @@ async def _dispatch(inbound: InboundMessage, send: MessageSender, channel: str) 
 
         history = await get_recent_messages(db, session.id)
 
-        await append_message(db, session.id, MessageRole.user, text, media_url=media_url)
+        await append_message(
+            db, session.id, MessageRole.user, text, media_url=media_url,
+            external_id=inbound.external_id,
+        )
 
         if await _try_handle_error_report(
             db, session, text, channel, send, inbound.recipient_id
@@ -156,7 +170,10 @@ async def _dispatch(inbound: InboundMessage, send: MessageSender, channel: str) 
 
 async def _handle_telegram_update(update: TelegramUpdate) -> None:
     if update.callback_query is not None:
-        await ack_callback_query(update.callback_query.id)
+        cq = update.callback_query
+        await ack_callback_query(cq.id)
+        if cq.message is not None:
+            await remove_inline_keyboard(str(cq.message.chat.id), cq.message.message_id)
     inbound = parse_update(update)
     if inbound is None:
         return

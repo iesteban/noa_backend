@@ -121,6 +121,7 @@ Before writing any code, evaluate every rule below. Mark ✅ PASS, ⚠️ WARN, 
 - ❌ FAIL — body starts or ends with `{{N}}`
 - ❌ FAIL — two variables appear adjacent to each other
 - ❌ FAIL — body is an open-ended question without QUICK_REPLY buttons (instant rejection)
+- ❌ FAIL — variable-to-word ratio too high: if variables ÷ total_words > 30%, Meta rejects with "Params Words Ratio Exceeds Limit" — add more static words or reduce variables
 - ⚠️ WARN — body asks user to "reply to this message" as a button workaround
 - ⚠️ WARN — body contains ALL CAPS words (looks spammy)
 
