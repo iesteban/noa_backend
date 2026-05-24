@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import logging
 from typing import Any
 
@@ -9,8 +8,6 @@ import httpx
 logger = logging.getLogger(__name__)
 
 _GRAPH_API = "https://graph.facebook.com/v19.0"
-_POLL_INTERVAL = 10  # seconds between status checks
-_POLL_TIMEOUT = 300  # seconds before giving up
 
 
 # ---------------------------------------------------------------------------
@@ -115,32 +112,23 @@ async def _update(
     logger.info("Updated template %r — re-submitted for approval", name)
 
 
-async def _poll_until_approved(
+async def _check_for_rejections(
     client: httpx.AsyncClient,
     access_token: str,
     waba_id: str,
     names: list[str],
 ) -> None:
-    pending = set(names)
-    elapsed = 0
-    while pending:
-        if elapsed >= _POLL_TIMEOUT:
-            raise TimeoutError(
-                f"Timed out waiting for approval of templates: {', '.join(sorted(pending))}"
-            )
-        await asyncio.sleep(_POLL_INTERVAL)
-        elapsed += _POLL_INTERVAL
-        existing = await _list_existing(client, access_token, waba_id)
-        by_name = {t["name"]: t for t in existing}
-        for name in list(pending):
-            status = by_name.get(name, {}).get("status", "UNKNOWN")
-            if status == "APPROVED":
-                logger.info("Template %r approved", name)
-                pending.discard(name)
-            elif status == "REJECTED":
-                raise RuntimeError(f"Template {name!r} was rejected by Meta")
-            else:
-                logger.debug("Template %r status: %s (%ds elapsed)", name, status, elapsed)
+    """One-shot status check after submitting. Fails on REJECTED; PENDING is fine."""
+    current = await _list_existing(client, access_token, waba_id)
+    by_name = {t["name"]: t for t in current}
+    for name in names:
+        status = by_name.get(name, {}).get("status", "UNKNOWN")
+        if status == "APPROVED":
+            logger.info("Template %r already approved", name)
+        elif status == "REJECTED":
+            raise RuntimeError(f"Template {name!r} was rejected by Meta")
+        else:
+            logger.info("Template %r is %s — pending Meta review", name, status)
 
 
 # ---------------------------------------------------------------------------
@@ -165,7 +153,7 @@ def _needs_update(defined: dict[str, Any], existing: dict[str, Any]) -> bool:
 
 
 async def sync_templates(access_token: str, waba_id: str) -> None:
-    """Create or update all registered WhatsApp templates and wait for approval."""
+    """Create or update all registered WhatsApp templates. Does not block on Meta review."""
     if not access_token or not waba_id:
         raise ValueError(
             "WHATSAPP_ACCESS_TOKEN and WHATSAPP_BUSINESS_ACCOUNT_ID must both be set"
@@ -175,20 +163,20 @@ async def sync_templates(access_token: str, waba_id: str) -> None:
         existing = await _list_existing(client, access_token, waba_id)
         existing_by_name = {t["name"]: t for t in existing}
 
-        pending: list[str] = []
+        submitted: list[str] = []
         for template in TEMPLATES:
             name = template["name"]
             remote = existing_by_name.get(name)
             if remote is None:
                 logger.info("Template %r not found — creating", name)
                 await _create(client, access_token, waba_id, template)
-                pending.append(name)
+                submitted.append(name)
             elif remote.get("status") == "REJECTED":
                 # Meta returns 400 on update attempts for rejected templates — delete and recreate.
                 logger.info("Template %r is REJECTED — deleting and recreating", name)
                 await _delete(client, access_token, waba_id, name)
                 await _create(client, access_token, waba_id, template)
-                pending.append(name)
+                submitted.append(name)
             elif _needs_update(template, remote):
                 logger.info("Template %r content changed — updating", name)
                 await _update(
@@ -198,17 +186,15 @@ async def sync_templates(access_token: str, waba_id: str) -> None:
                     name,
                     template["components"],
                 )
-                pending.append(name)
+                submitted.append(name)
             else:
                 status = remote.get("status", "UNKNOWN")
-                if status != "APPROVED":
-                    logger.warning("Template %r exists but status is %s", name, status)
-                    pending.append(name)
-                else:
+                if status == "APPROVED":
                     logger.info("Template %r is up to date and approved — skipping", name)
+                else:
+                    logger.warning("Template %r exists but status is %s", name, status)
 
-        if pending:
-            logger.info("Waiting for approval of: %s", ", ".join(pending))
-            await _poll_until_approved(client, access_token, waba_id, pending)
+        if submitted:
+            await _check_for_rejections(client, access_token, waba_id, submitted)
 
     logger.info("All templates synced successfully")
