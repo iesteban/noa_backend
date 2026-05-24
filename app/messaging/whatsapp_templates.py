@@ -25,7 +25,10 @@ TEMPLATES: list[dict[str, Any]] = [
         "components": [
             {
                 "type": "BODY",
-                "text": "Hola {{1}}, {{2}} quiere organizar una cita de {{3}}.",
+                "text": (
+                    "Hola {{1}}, el profesional {{2}} quiere coordinar contigo una cita "
+                    "para el servicio de {{3}}. Indica tu disponibilidad con el botón."
+                ),
                 "example": {"body_text": [["Pedro", "Fontanería García", "fontanería"]]},
             },
             {
