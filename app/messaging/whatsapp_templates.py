@@ -19,7 +19,7 @@ _POLL_TIMEOUT = 300  # seconds before giving up
 
 TEMPLATES: list[dict[str, Any]] = [
     {
-        "name": "appointment_request",
+        "name": "appointment_request_v2",
         "language": "es",
         "category": "UTILITY",
         "components": [
@@ -71,6 +71,8 @@ async def _create(
         headers=_headers(access_token),
         json=template,
     )
+    if not r.is_success:
+        logger.error("Create template %r returned %s: %s", template["name"], r.status_code, r.text)
     r.raise_for_status()
     logger.info("Created template %r (status: %s)", template["name"], r.json().get("status"))
 
