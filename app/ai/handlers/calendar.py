@@ -20,6 +20,8 @@ from app.models.appointment import (
     CalendarProviderEnum,
     CalendarToken,
 )
+from app.models.client import Client
+from app.models.contractor import Contractor
 from app.models.session import ConversationSession
 from app.models.working_hours import WorkingHours
 
@@ -57,6 +59,7 @@ def _compute_free_slots(
     date_to: date,
     busy: list[CalendarEvent],
     working_hours: dict[int, WorkingHours] | None = None,
+    slot_minutes: int = _SLOT_MINUTES,
 ) -> list[tuple[datetime, datetime]]:
     slots: list[tuple[datetime, datetime]] = []
     current = date_from
@@ -79,8 +82,8 @@ def _compute_free_slots(
 
         slot_start = datetime.combine(current, work_start, tzinfo=UTC)
         day_end = datetime.combine(current, work_end, tzinfo=UTC)
-        while slot_start + timedelta(minutes=_SLOT_MINUTES) <= day_end:
-            slot_end = slot_start + timedelta(minutes=_SLOT_MINUTES)
+        while slot_start + timedelta(minutes=slot_minutes) <= day_end:
+            slot_end = slot_start + timedelta(minutes=slot_minutes)
             if not any(slot_start < ev.ends_at and slot_end > ev.starts_at for ev in busy):
                 slots.append((slot_start, slot_end))
                 if len(slots) >= _MAX_SLOTS:
@@ -321,4 +324,104 @@ async def handle_create_appointment(
         f" | {starts_str}"
         f" | {duration_minutes} min"
         f"{calendar_note}"
+    )
+
+
+async def _create_pending_appointment(
+    db: AsyncSession,
+    contractor_id: uuid.UUID,
+    client_id: uuid.UUID,
+    duration_minutes: int,
+    description: str,
+) -> Appointment:
+    # Placeholder start; updated when the client confirms a specific slot.
+    placeholder_starts_at = datetime(9999, 1, 1, 0, 0, 0, tzinfo=UTC)
+    appointment = Appointment(
+        contractor_id=contractor_id,
+        client_id=client_id,
+        starts_at=placeholder_starts_at,
+        duration_minutes=duration_minutes,
+        description=description,
+        status=AppointmentStatus.pending_client,
+        booked_by=BookedBy.contractor,
+    )
+    db.add(appointment)
+    await db.flush()
+    return appointment
+
+
+async def _send_appointment_request_template(
+    client: Client,
+    contractor: Contractor,
+    description: str,
+) -> str:
+    from app.messaging.whatsapp_sender import send_template_message
+
+    client_first_name = client.name.split()[0]
+    business_name = contractor.business_name or contractor.name
+    try:
+        await send_template_message(
+            recipient_id=client.phone_number,
+            template_name="appointment_request_v2",
+            language_code="es",
+            body_parameters=[client_first_name, business_name, description],
+        )
+        return "Plantilla de WhatsApp enviada al cliente ✓"
+    except Exception:
+        logger.exception("WhatsApp template send failed for client %s", client.id)
+        return "No se pudo enviar el mensaje de WhatsApp al cliente"
+
+
+@register("initiate_appointment")
+async def handle_initiate_appointment(
+    tool_input: dict[str, Any],
+    db: AsyncSession,
+    session: ConversationSession,
+) -> str:
+    if session.contractor_id is None:
+        return "Session error: contractor not identified."
+
+    raw_client = tool_input.get("client_id")
+    if not raw_client:
+        return "client_id es obligatorio."
+    try:
+        client_id = uuid.UUID(str(raw_client))
+    except ValueError:
+        return "client_id inválido — debe ser un UUID."
+
+    try:
+        duration_minutes = int(tool_input["duration_minutes"])
+    except (KeyError, TypeError, ValueError):
+        return "duration_minutes inválido — debe ser un entero."
+
+    description = str(tool_input.get("description", "")).strip()
+    if not description:
+        return "description es obligatorio."
+
+    client_result = await db.execute(
+        select(Client).where(
+            Client.id == client_id,
+            Client.contractor_id == session.contractor_id,
+        )
+    )
+    client = client_result.scalar_one_or_none()
+    if client is None:
+        return "Cliente no encontrado."
+
+    contractor_result = await db.execute(
+        select(Contractor).where(Contractor.id == session.contractor_id)
+    )
+    contractor = contractor_result.scalar_one_or_none()
+    if contractor is None:
+        return "Session error: contractor not found."
+
+    appointment = await _create_pending_appointment(
+        db, session.contractor_id, client_id, duration_minutes, description
+    )
+    send_note = await _send_appointment_request_template(client, contractor, description)
+
+    return (
+        f"Cita pendiente creada. id={appointment.id} | "
+        f"Cliente: {client.name} | Duración: {duration_minutes} min | "
+        f"Servicio: {description} | {send_note}"
     )

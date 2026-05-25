@@ -322,6 +322,30 @@ _CONTRACTOR_TOOL_LIST: list[dict[str, Any]] = [
         },
     },
     {
+        "name": "initiate_appointment",
+        "description": (
+            "Start a contractor-initiated booking flow: send a WhatsApp template to the client "
+            "asking for their availability, and save the appointment as pending_client. "
+            "Use when the contractor wants to schedule a service visit with a client "
+            "but the time is not yet agreed."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "client_id": {"type": "string", "description": "UUID of the client."},
+                "duration_minutes": {
+                    "type": "integer",
+                    "description": "Expected duration of the appointment in minutes.",
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Service type or reason for the visit (e.g. 'fontanería').",
+                },
+            },
+            "required": ["client_id", "duration_minutes", "description"],
+        },
+    },
+    {
         "name": "send_payment_reminder",
         "description": "Send a payment reminder to a client for an overdue invoice.",
         "input_schema": {
