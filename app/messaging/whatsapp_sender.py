@@ -72,6 +72,45 @@ def _list_payload(
     }
 
 
+async def send_template_message(
+    recipient_id: str,
+    template_name: str,
+    language_code: str,
+    body_parameters: list[str],
+) -> None:
+    """Send a WhatsApp template message (for outbound contact outside the 24h window)."""
+    payload: dict[str, Any] = {
+        "messaging_product": "whatsapp",
+        "to": recipient_id,
+        "type": "template",
+        "template": {
+            "name": template_name,
+            "language": {"code": language_code},
+            "components": [
+                {
+                    "type": "body",
+                    "parameters": [{"type": "text", "text": p} for p in body_parameters],
+                }
+            ],
+        },
+    }
+    url = f"{_GRAPH_API}/{settings.whatsapp_phone_number_id}/messages"
+    headers = {"Authorization": f"Bearer {settings.whatsapp_access_token}"}
+    try:
+        async with httpx.AsyncClient() as client:
+            r = await client.post(url, json=payload, headers=headers)
+            if not r.is_success:
+                logger.error(
+                    "Meta WhatsApp template send failed to %s: %s %s",
+                    recipient_id,
+                    r.status_code,
+                    r.text,
+                )
+            r.raise_for_status()
+    except Exception:
+        logger.exception("Meta WhatsApp template send failed to %s", recipient_id)
+
+
 async def send_message(
     recipient_id: str,
     text: str,
