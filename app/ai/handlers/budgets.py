@@ -21,27 +21,15 @@ from app.storage.client import delete_file, upload_file
 logger = logging.getLogger(__name__)
 
 
-@register("create_budget")
-async def handle_create_budget(
-    tool_input: dict[str, Any],
-    db: AsyncSession,
-    session: ConversationSession,
-) -> str:
-    if session.contractor_id is None:
-        return "Session error: contractor not identified."
+# ---------------------------------------------------------------------------
+# Shared validation helpers
+# ---------------------------------------------------------------------------
 
-    # --- validate client_id ---
-    import uuid
-    try:
-        client_id = uuid.UUID(str(tool_input["client_id"]))
-    except (KeyError, ValueError):
-        return "Invalid client_id — must be a UUID returned by search_client."
-
-    # --- validate lines ---
-    raw_lines = tool_input.get("lines")
-    if not raw_lines or not isinstance(raw_lines, list):
+def _validate_lines(raw: object) -> list[dict[str, object]] | str:
+    """Validate a raw lines value. Returns the validated list or an error string."""
+    if not raw or not isinstance(raw, list):
         return "lines is required and must be a non-empty list."
-    for i, ln in enumerate(raw_lines):
+    for i, ln in enumerate(raw):
         if not isinstance(ln, dict):
             return f"Line {i}: must be an object with description, quantity, unit_price."
         for field in ("description", "quantity", "unit_price"):
@@ -52,41 +40,55 @@ async def handle_create_budget(
             float(ln["unit_price"])
         except (TypeError, ValueError):
             return f"Line {i}: quantity and unit_price must be numbers."
+    return raw
 
-    # --- optional valid_until ---
-    valid_until: date | None = None
-    raw_valid = tool_input.get("valid_until")
-    if raw_valid:
-        try:
-            valid_until = date.fromisoformat(str(raw_valid))
-        except ValueError:
-            return "Invalid valid_until — use YYYY-MM-DD format."
 
-    # --- data isolation: client must belong to this contractor ---
-    client = await db.get(Client, client_id)
-    if client is None or client.contractor_id != session.contractor_id:
-        return f"Client {client_id} not found."
+def _parse_valid_until(raw: object) -> date | str | None:
+    """Parse an optional valid_until value. Returns date, error string, or None if absent."""
+    if raw is None:
+        return None
+    try:
+        return date.fromisoformat(str(raw))
+    except ValueError:
+        return "Invalid valid_until — use YYYY-MM-DD format."
 
-    contractor = await db.get(Contractor, session.contractor_id)
-    if contractor is None:
-        return "Session error: contractor record not found."
 
-    # --- create budget record ---
-    budget = await create_budget(
-        db=db,
-        contractor=contractor,
-        client=client,
-        lines_input=raw_lines,
-        budget_date=date.today(),
-        valid_until=valid_until,
-    )
+def _parse_budget_id(tool_input: dict[str, Any]) -> uuid.UUID | str:
+    """Return parsed UUID or an error string."""
+    try:
+        return uuid.UUID(str(tool_input["budget_id"]))
+    except (KeyError, ValueError):
+        return "Invalid budget_id — must be a UUID."
 
-    # --- generate PDF and upload ---
-    await db.refresh(budget, ["lines"])
+
+async def _load_draft_budget(
+    db: AsyncSession,
+    budget_id: uuid.UUID,
+    contractor_id: uuid.UUID,
+) -> Budget | str:
+    """Return the Budget or an error string if not found, wrong contractor, or non-draft."""
+    budget = await db.get(Budget, budget_id)
+    if budget is None or budget.contractor_id != contractor_id:
+        return f"Budget {budget_id} not found."
+    if budget.status != BudgetStatus.draft:
+        return (
+            f"Budget {budget_id} cannot be modified — "
+            f"status is '{budget.status.value}' (only draft budgets can be edited or deleted)."
+        )
+    return budget
+
+
+async def _upload_budget_pdf(
+    budget: Budget,
+    contractor: Contractor,
+    db: AsyncSession,
+) -> str:
+    """Render, upload, and persist the PDF URL on the budget. Returns the URL."""
+    await db.refresh(budget, ["lines", "client"])
     pdf_bytes = render_budget_pdf(
         budget=budget,
         contractor=contractor,
-        client=client,
+        client=budget.client,
         lines=budget.lines,
     )
     pdf_url = upload_file(
@@ -98,6 +100,63 @@ async def handle_create_budget(
     )
     budget.pdf_url = pdf_url
     await db.flush()
+    return pdf_url
+
+
+def _try_delete_pdf(pdf_url: str, label: str) -> None:
+    """Best-effort PDF deletion — logs on failure, never raises."""
+    try:
+        delete_file(pdf_url)
+    except Exception:
+        logger.warning("Could not delete PDF %s (%s)", pdf_url, label)
+
+
+# ---------------------------------------------------------------------------
+# Handlers
+# ---------------------------------------------------------------------------
+
+@register("create_budget")
+async def handle_create_budget(
+    tool_input: dict[str, Any],
+    db: AsyncSession,
+    session: ConversationSession,
+) -> str:
+    if session.contractor_id is None:
+        return "Session error: contractor not identified."
+
+    try:
+        client_id = uuid.UUID(str(tool_input["client_id"]))
+    except (KeyError, ValueError):
+        return "Invalid client_id — must be a UUID returned by search_client."
+
+    lines_or_err = _validate_lines(tool_input.get("lines"))
+    if isinstance(lines_or_err, str):
+        return lines_or_err
+    raw_lines = lines_or_err
+
+    valid_until_or_err = _parse_valid_until(tool_input.get("valid_until"))
+    if isinstance(valid_until_or_err, str):
+        return valid_until_or_err
+    valid_until = valid_until_or_err
+
+    client = await db.get(Client, client_id)
+    if client is None or client.contractor_id != session.contractor_id:
+        return f"Client {client_id} not found."
+
+    contractor = await db.get(Contractor, session.contractor_id)
+    if contractor is None:
+        return "Session error: contractor record not found."
+
+    budget = await create_budget(
+        db=db,
+        contractor=contractor,
+        client=client,
+        lines_input=raw_lines,
+        budget_date=date.today(),
+        valid_until=valid_until,
+    )
+
+    pdf_url = await _upload_budget_pdf(budget, contractor, db)
 
     line_count = len(budget.lines)
     return (
@@ -234,31 +293,6 @@ async def handle_list_budgets(
     return "\n".join(lines)
 
 
-def _parse_budget_id(tool_input: dict[str, Any]) -> uuid.UUID | str:
-    """Return parsed UUID or an error string."""
-    try:
-        return uuid.UUID(str(tool_input["budget_id"]))
-    except (KeyError, ValueError):
-        return "Invalid budget_id — must be a UUID."
-
-
-async def _load_draft_budget(
-    db: AsyncSession,
-    budget_id: uuid.UUID,
-    contractor_id: uuid.UUID,
-) -> Budget | str:
-    """Return the Budget or an error string if not found, wrong contractor, or non-draft."""
-    budget = await db.get(Budget, budget_id)
-    if budget is None or budget.contractor_id != contractor_id:
-        return f"Budget {budget_id} not found."
-    if budget.status != BudgetStatus.draft:
-        return (
-            f"Budget {budget_id} cannot be modified — "
-            f"status is '{budget.status.value}' (only draft budgets can be edited or deleted)."
-        )
-    return budget
-
-
 @register("update_budget")
 async def handle_update_budget(
     tool_input: dict[str, Any],
@@ -272,40 +306,25 @@ async def handle_update_budget(
     if isinstance(budget_id, str):
         return budget_id
 
-    result = await _load_draft_budget(db, budget_id, session.contractor_id)
-    if isinstance(result, str):
-        return result
-    budget = result
+    budget_or_err = await _load_draft_budget(db, budget_id, session.contractor_id)
+    if isinstance(budget_or_err, str):
+        return budget_or_err
+    budget = budget_or_err
 
-    # --- validate optional lines ---
-    raw_lines: list[dict[str, object]] | None = None
     raw_lines_input = tool_input.get("lines")
+    raw_lines: list[dict[str, object]] | None = None
     if raw_lines_input is not None:
-        if not isinstance(raw_lines_input, list) or len(raw_lines_input) == 0:
-            return "lines must be a non-empty list."
-        for i, ln in enumerate(raw_lines_input):
-            if not isinstance(ln, dict):
-                return f"Line {i}: must be an object with description, quantity, unit_price."
-            for field in ("description", "quantity", "unit_price"):
-                if field not in ln:
-                    return f"Line {i}: missing required field '{field}'."
-            try:
-                float(ln["quantity"])
-                float(ln["unit_price"])
-            except (TypeError, ValueError):
-                return f"Line {i}: quantity and unit_price must be numbers."
-        raw_lines = raw_lines_input
+        lines_or_err = _validate_lines(raw_lines_input)
+        if isinstance(lines_or_err, str):
+            return lines_or_err
+        raw_lines = lines_or_err
 
-    # --- validate optional valid_until ---
-    valid_until: date | None = None
-    raw_valid = tool_input.get("valid_until")
-    if raw_valid is not None:
-        try:
-            valid_until = date.fromisoformat(str(raw_valid))
-        except ValueError:
-            return "Invalid valid_until — use YYYY-MM-DD format."
+    valid_until_or_err = _parse_valid_until(tool_input.get("valid_until"))
+    if isinstance(valid_until_or_err, str):
+        return valid_until_or_err
+    valid_until = valid_until_or_err
 
-    if raw_lines is None and raw_valid is None:
+    if raw_lines is None and valid_until is None:
         return "Provide at least one of: lines, valid_until."
 
     contractor = await db.get(Contractor, session.contractor_id)
@@ -323,29 +342,9 @@ async def handle_update_budget(
     )
 
     if raw_lines is not None:
-        # Re-generate PDF with updated lines.
-        await db.refresh(budget, ["lines", "client"])
-        pdf_bytes = render_budget_pdf(
-            budget=budget,
-            contractor=contractor,
-            client=budget.client,
-            lines=budget.lines,
-        )
-        new_pdf_url = upload_file(
-            contractor_id=contractor.id,
-            entity_type="budgets",
-            file_bytes=pdf_bytes,
-            ext="pdf",
-            public=True,
-        )
-        budget.pdf_url = new_pdf_url
-        await db.flush()
-
+        await _upload_budget_pdf(budget, contractor, db)
         if old_pdf_url:
-            try:
-                delete_file(old_pdf_url)
-            except Exception:
-                logger.warning("Could not delete old PDF %s", old_pdf_url)
+            _try_delete_pdf(old_pdf_url, label=str(budget_id))
 
     line_count = len(budget.lines) if raw_lines is not None else None
     parts = [f"Presupuesto {budget_id} actualizado."]
@@ -370,17 +369,14 @@ async def handle_delete_budget(
     if isinstance(budget_id, str):
         return budget_id
 
-    result = await _load_draft_budget(db, budget_id, session.contractor_id)
-    if isinstance(result, str):
-        return result
-    budget = result
+    budget_or_err = await _load_draft_budget(db, budget_id, session.contractor_id)
+    if isinstance(budget_or_err, str):
+        return budget_or_err
+    budget = budget_or_err
 
     pdf_url = await delete_budget(db=db, budget=budget)
 
     if pdf_url:
-        try:
-            delete_file(pdf_url)
-        except Exception:
-            logger.warning("Could not delete PDF %s for budget %s", pdf_url, budget_id)
+        _try_delete_pdf(pdf_url, label=str(budget_id))
 
     return f"Presupuesto {budget_id} eliminado."
