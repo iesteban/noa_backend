@@ -16,6 +16,27 @@ _GRAPH_API = "https://graph.facebook.com/v19.0"
 
 TEMPLATES: list[dict[str, Any]] = [
     {
+        "name": "solicitar_datos_factura",
+        "language": "es",
+        "category": "UTILITY",
+        "components": [
+            {
+                "type": "BODY",
+                "text": (
+                    "Hola {{1}}, {{2}} necesita tu NIF/CIF y dirección completa "
+                    "para emitirte una factura. Responde con tus datos para continuar."
+                ),
+                "example": {"body_text": [["Pedro", "Fontanería García"]]},
+            },
+            {
+                "type": "BUTTONS",
+                "buttons": [
+                    {"type": "QUICK_REPLY", "text": "Enviar mis datos"},
+                ],
+            },
+        ],
+    },
+    {
         "name": "appointment_request_v2",
         "language": "es",
         "category": "UTILITY",

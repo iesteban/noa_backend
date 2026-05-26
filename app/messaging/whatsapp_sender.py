@@ -78,7 +78,7 @@ async def send_template_message(
     language_code: str,
     body_parameters: list[str],
 ) -> None:
-    """Send a WhatsApp template message via the Meta Graph API."""
+    """Send a WhatsApp template message (for outbound contact outside the 24h window)."""
     payload: dict[str, Any] = {
         "messaging_product": "whatsapp",
         "to": recipient_id,
@@ -89,9 +89,7 @@ async def send_template_message(
             "components": [
                 {
                     "type": "body",
-                    "parameters": [
-                        {"type": "text", "text": p} for p in body_parameters
-                    ],
+                    "parameters": [{"type": "text", "text": p} for p in body_parameters],
                 }
             ],
         },

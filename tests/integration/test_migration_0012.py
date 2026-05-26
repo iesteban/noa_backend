@@ -1,4 +1,4 @@
-"""Integration tests for migration 0012 — pending_client appointment status."""
+"""Integration tests for migration 0012 — address and email columns on clients."""
 from __future__ import annotations
 
 import asyncio
@@ -15,16 +15,15 @@ def _alembic_cfg() -> Config:
     return Config("alembic.ini")
 
 
-async def _enum_has_value(enum_name: str, value: str) -> bool:
+async def _column_exists(table: str, column: str) -> bool:
     engine = create_async_engine(settings.database_url)
     async with engine.connect() as conn:
         result = await conn.execute(
             text(
-                "SELECT 1 FROM pg_enum e "
-                "JOIN pg_type t ON t.oid = e.enumtypid "
-                "WHERE e.enumlabel = :v AND t.typname = :e"
+                "SELECT 1 FROM information_schema.columns "
+                "WHERE table_name = :t AND column_name = :c"
             ),
-            {"v": value, "e": enum_name},
+            {"t": table, "c": column},
         )
         exists = result.fetchone() is not None
     await engine.dispose()
@@ -32,13 +31,17 @@ async def _enum_has_value(enum_name: str, value: str) -> bool:
 
 
 class TestMigration0012:
-    def test_upgrade_adds_pending_client_value(self, _schema: None) -> None:
-        assert asyncio.run(_enum_has_value("appointmentstatus", "pending_client"))
+    def test_upgrade_adds_address_column(self, _schema: None) -> None:
+        assert asyncio.run(_column_exists("clients", "address"))
 
-    def test_downgrade_removes_pending_client_value(self, _schema: None) -> None:
+    def test_upgrade_adds_email_column(self, _schema: None) -> None:
+        assert asyncio.run(_column_exists("clients", "email"))
+
+    def test_downgrade_removes_columns(self, _schema: None) -> None:
         cfg = _alembic_cfg()
         command.downgrade(cfg, "0011")
         try:
-            assert not asyncio.run(_enum_has_value("appointmentstatus", "pending_client"))
+            assert not asyncio.run(_column_exists("clients", "address"))
+            assert not asyncio.run(_column_exists("clients", "email"))
         finally:
             command.upgrade(cfg, "head")
