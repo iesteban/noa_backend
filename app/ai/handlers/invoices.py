@@ -147,8 +147,8 @@ async def handle_create_invoice(
     if len(jobs) != len(job_ids):
         found_ids = {job.id for job in jobs}
         missing_jobs = [j for j in job_ids if j not in found_ids]
-        missing = ", ".join(str(j) for j in missing_jobs)
-        return f"Jobs not found or not owned by this client: {missing}"
+        missing_ids = ", ".join(str(j) for j in missing_jobs)
+        return f"Jobs not found or not owned by this client: {missing_ids}"
 
     already_invoiced = [job for job in jobs if job.status == JobStatus.invoiced]
     if already_invoiced:
