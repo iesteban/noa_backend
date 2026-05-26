@@ -11,7 +11,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.ai.handlers.invoices import handle_create_invoice
 from app.models.invoice import Invoice, InvoiceLine
 from app.models.job import Job, JobStatus
-from tests.integration.conftest import make_client, make_contractor, make_session
+from tests.integration.conftest import make_client as _make_client
+from tests.integration.conftest import make_contractor, make_session
+
+_CLIENT_LEGAL = {"nif": "12345678Z", "address": "Calle Mayor 1, 28001 Madrid"}
+
+
+async def make_client(db: AsyncSession, contractor, **overrides: object):  # type: ignore[no-untyped-def]
+    """Wrapper that injects legal NIF/address so the invoice gate is always bypassed."""
+    return await _make_client(db, contractor, **{**_CLIENT_LEGAL, **overrides})
 
 _FAKE_PDF_URL = "https://noa-dev.s3.fr-par.scw.cloud/fake/invoices/test.pdf"
 

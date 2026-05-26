@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import logging
+import uuid
 
 import sentry_sdk
 from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Query, Request
@@ -35,6 +36,50 @@ from app.services.session import append_message, get_or_create_session
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+
+async def _notify_contractor_invoice_ready(
+    db: AsyncSession,
+    contractor_id: uuid.UUID,
+    message: str,
+) -> None:
+    from app.models.contractor import Contractor
+    contractor = await db.get(Contractor, contractor_id)
+    if contractor is None:
+        return
+    try:
+        if contractor.channel == "telegram" and contractor.telegram_chat_id:
+            await telegram_send(contractor.telegram_chat_id, message)
+        else:
+            await whatsapp_send(contractor.phone_number, message)
+    except Exception:
+        logger.exception("Failed to notify contractor %s of ready invoice", contractor_id)
+
+
+async def _try_handle_pending_invoice_data(
+    db: AsyncSession,
+    session: ConversationSession,
+    text: str,
+    send: MessageSender,
+    recipient_id: str,
+) -> bool:
+    """Handle client replies in the invoice data collection flow. Returns True if consumed."""
+    if session.user_type != UserType.client:
+        return False
+    if not session.context.get("pending_invoice_data"):
+        return False
+
+    from app.services.invoice_data_collection import process_client_data_reply
+    client_reply, contractor_msg = await process_client_data_reply(db, session, text)
+
+    await db.commit()
+    await append_message(db, session.id, MessageRole.assistant, client_reply)
+    await send(recipient_id, client_reply)
+
+    if contractor_msg and session.contractor_id:
+        await _notify_contractor_invoice_ready(db, session.contractor_id, contractor_msg)
+
+    return True
 
 
 async def _try_handle_error_report(
@@ -151,6 +196,11 @@ async def _dispatch(inbound: InboundMessage, send: MessageSender, channel: str) 
             db, session.id, MessageRole.user, text, media_url=media_url,
             external_id=inbound.external_id,
         )
+
+        if await _try_handle_pending_invoice_data(
+            db, session, text, send, inbound.recipient_id
+        ):
+            return
 
         if await _try_handle_error_report(
             db, session, text, channel, send, inbound.recipient_id

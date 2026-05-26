@@ -10,15 +10,84 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.ai.dispatcher import register
+from app.messaging.whatsapp_sender import send_template_message
 from app.models.client import Client
+from app.models.contractor import Contractor
 from app.models.invoice import Invoice, InvoiceStatus
 from app.models.job import Job, JobStatus
-from app.models.session import ConversationSession
+from app.models.session import ConversationSession, UserType
 from app.pdf.invoice import render_invoice_pdf
 from app.services.invoice import create_invoice
 from app.storage.client import upload_file
 
 logger = logging.getLogger(__name__)
+
+
+def _missing_legal_fields(client: Client) -> list[str]:
+    """Return the field labels required for a legal Spanish invoice that are missing."""
+    missing = []
+    if not client.nif:
+        missing.append("NIF/CIF")
+    if not client.address:
+        missing.append("dirección")
+    return missing
+
+
+async def _request_client_data(
+    db: AsyncSession,
+    contractor_session: ConversationSession,
+    client: Client,
+    contractor: Contractor,
+    job_ids: list[uuid.UUID],
+    invoice_date: date,
+    due_date: date | None,
+    missing: list[str],
+) -> str:
+    """Store pending invoice state on the client's WhatsApp session and send the template."""
+    client_session_row = await db.execute(
+        select(ConversationSession).where(
+            ConversationSession.phone_number == client.phone_number,
+            ConversationSession.channel == "whatsapp",
+            ConversationSession.user_type == UserType.client,
+            ConversationSession.contractor_id == contractor_session.contractor_id,
+        ).limit(1)
+    )
+    client_session = client_session_row.scalar_one_or_none()
+    if client_session is None:
+        client_session = ConversationSession(
+            phone_number=client.phone_number,
+            channel="whatsapp",
+            user_type=UserType.client,
+            contractor_id=contractor_session.contractor_id,
+            client_id=client.id,
+            context={},
+        )
+        db.add(client_session)
+        await db.flush()
+
+    client_session.context = {
+        **client_session.context,
+        "pending_invoice_data": {
+            "job_ids": [str(j) for j in job_ids],
+            "date": str(invoice_date),
+            "due_date": str(due_date) if due_date else None,
+            "step": "awaiting_data",
+        },
+    }
+    await db.flush()
+
+    await send_template_message(
+        recipient_id=client.phone_number,
+        template_name="solicitar_datos_factura",
+        language_code="es",
+        body_parameters=[client.name.split()[0], contractor.business_name or contractor.name],
+    )
+
+    missing_str = " y ".join(missing)
+    return (
+        f"Le he pedido a {client.name} su {missing_str} por WhatsApp. "
+        f"Te aviso cuando los tenga y la factura esté lista."
+    )
 
 
 @register("create_invoice")
@@ -77,8 +146,8 @@ async def handle_create_invoice(
 
     if len(jobs) != len(job_ids):
         found_ids = {job.id for job in jobs}
-        missing = [j for j in job_ids if j not in found_ids]
-        return f"Jobs not found or not owned by this client: {', '.join(str(j) for j in missing)}"
+        missing_jobs = [j for j in job_ids if j not in found_ids]
+        return f"Jobs not found or not owned by this client: {', '.join(str(j) for j in missing_jobs)}"
 
     already_invoiced = [job for job in jobs if job.status == JobStatus.invoiced]
     if already_invoiced:
@@ -86,10 +155,16 @@ async def handle_create_invoice(
         return f"These jobs are already invoiced: {nums}"
 
     # --- load contractor (needed for rates and invoice number) ---
-    from app.models.contractor import Contractor  # local to avoid circular at module level
     contractor = await db.get(Contractor, session.contractor_id)
     if contractor is None:
         return "Session error: contractor record not found."
+
+    # --- gate: NIF/CIF and address are legally required for a Spanish invoice ---
+    missing = _missing_legal_fields(client)
+    if missing:
+        return await _request_client_data(
+            db, session, client, contractor, job_ids, invoice_date, due_date, missing
+        )
 
     # --- create invoice record ---
     invoice = await create_invoice(
