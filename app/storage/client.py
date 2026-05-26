@@ -46,6 +46,13 @@ def upload_file(
     return f"https://{settings.scw_bucket}.s3.{settings.scw_region}.scw.cloud/{key}"
 
 
+def delete_file(storage_url: str) -> None:
+    """Delete an object from storage given its canonical URL."""
+    prefix = f"https://{settings.scw_bucket}.s3.{settings.scw_region}.scw.cloud/"
+    key = storage_url.removeprefix(prefix)
+    _make_s3().delete_object(Bucket=settings.scw_bucket, Key=key)
+
+
 def presign_url(storage_url: str, expires_seconds: int = 3600) -> str:
     """Return a time-limited GET URL for a storage object.
 
