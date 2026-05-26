@@ -1,11 +1,10 @@
 """Integration tests for client-mode tool handlers."""
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, patch
 from zoneinfo import ZoneInfo
 
-import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -31,7 +30,9 @@ _MADRID_TZ = ZoneInfo("Europe/Madrid")
 _FUTURE = datetime(2099, 6, 15, 10, 0, 0, tzinfo=UTC)
 
 
-def _client_session_input(client_session: object, *, starts_at: str = "2099-06-15T10:00:00") -> dict:
+def _client_session_input(
+    client_session: object, *, starts_at: str = "2099-06-15T10:00:00"
+) -> dict:
     return {"starts_at": starts_at, "description": "Revisión de fontanería"}
 
 
@@ -268,7 +269,10 @@ class TestGetMyInvoices:
         contractor = await make_contractor(db)
         client = await make_client(db, contractor)
         session = await make_session(db, contractor, user_type=UserType.client, client_id=client.id)
-        await make_invoice(db, contractor, client, invoice_number="2099-001", total=120.0, status=InvoiceStatus.sent)
+        await make_invoice(
+            db, contractor, client,
+            invoice_number="2099-001", total=120.0, status=InvoiceStatus.sent
+        )
 
         result = await handle_get_my_invoices({}, db, session)
 
