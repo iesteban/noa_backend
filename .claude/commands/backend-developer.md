@@ -55,12 +55,59 @@ def downgrade() -> None:
 
 ---
 
-## Code structure
+## Private helpers — extract before you finish
+
+**Before calling any function done, run this checklist:**
+
+- [ ] Is there a validation block of 3+ lines? → `_validate_X(raw) -> T | str`
+- [ ] Is the same logic copied from another function? → shared `_helper`
+- [ ] Is there a distinct step (load+check, render+upload, parse+convert) that makes the caller hard to scan? → named helper
+- [ ] Is there a `try/except` around a side-effect that should never raise? → `_try_do_X()`
+
+The goal: a handler body should read as a flat sequence of named steps, not inline logic.
+
+### Validation helpers in tool handlers
+
+Tool handlers return strings to Claude, so validation helpers return `T | str` (value or error string) instead of raising.
+
+```python
+def _validate_lines(raw: object) -> list[dict[str, object]] | str:
+    if not raw or not isinstance(raw, list):
+        return "lines is required and must be a non-empty list."
+    for i, ln in enumerate(raw):
+        ...
+    return raw
+
+def _parse_valid_until(raw: object) -> date | str | None:
+    if raw is None:
+        return None
+    try:
+        return date.fromisoformat(str(raw))
+    except ValueError:
+        return "Invalid valid_until — use YYYY-MM-DD format."
+
+# Handler reads as steps, not inline validation
+@register("create_budget")
+async def handle_create_budget(tool_input, db, session):
+    lines_or_err = _validate_lines(tool_input.get("lines"))
+    if isinstance(lines_or_err, str):
+        return lines_or_err
+
+    valid_until_or_err = _parse_valid_until(tool_input.get("valid_until"))
+    if isinstance(valid_until_or_err, str):
+        return valid_until_or_err
+
+    budget = await create_budget(...)
+    pdf_url = await _upload_budget_pdf(budget, contractor, db)
+    ...
+```
+
+### General code structure
 
 When a function contains a distinct logical branch that makes it hard to read at a glance, extract it into a private helper (`_name`). The caller should read like a list of steps; the helper owns the details.
 
 ```python
-# Good — _dispatch reads as a straight sequence of steps
+# Good — reads as a straight sequence of steps
 if await _try_handle_error_report(db, session, text, channel, last_assistant, send, recipient_id):
     return
 reply = await call_claude(db, session, text)
@@ -73,19 +120,19 @@ if is_error:
     ...  # 10 more lines
 ```
 
-The helper should return a bool (consumed / not consumed) or the result it computed, so the caller needs no knowledge of the internals.
+### Raise, don't return sentinels (outside tool handlers)
 
-Raise exceptions for error conditions rather than returning sentinel values or error strings. Let FastAPI's exception handlers or the caller decide how to respond.
+In service functions and non-handler code, raise exceptions rather than returning `None` or error strings. Let FastAPI's exception handlers or the caller decide how to respond.
 
 ```python
-# Good
+# Good — service code
 async def get_contractor_or_raise(db: AsyncSession, contractor_id: uuid.UUID) -> Contractor:
     contractor = await db.get(Contractor, contractor_id)
     if contractor is None:
         raise ValueError(f"Contractor {contractor_id} not found")
     return contractor
 
-# Avoid — callers must check the return value and can silently ignore it
+# Avoid — callers must check and can silently ignore
 async def get_contractor(db, contractor_id) -> Contractor | None:
     return await db.get(Contractor, contractor_id)
 ```
