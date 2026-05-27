@@ -22,6 +22,7 @@ class CalendarProviderEnum(enum.StrEnum):
 
 
 class AppointmentStatus(enum.StrEnum):
+    pending_client = "pending_client"
     scheduled = "scheduled"
     completed = "completed"
     cancelled = "cancelled"
