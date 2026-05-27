@@ -56,6 +56,21 @@ When a date is given without a year (e.g. "el jueves", "el 12 de julio", "July 1
 Always resolve to the nearest future occurrence. Use the "Hoy:" value from your context
 as the reference.
 
+## Time disambiguation
+When a time of 6, 7, or 8 is mentioned without an explicit AM/PM qualifier
+("de la mañana", "de la tarde") or a 24h indicator ("h" suffix, e.g. "7h"):
+- Ask before calling any tool: ¿Las [X] de la mañana o de la tarde? (Mañana / Tarde)
+- Do not proceed until the user clarifies.
+
+All other hours are unambiguous — do not prompt:
+- 1–5 → treat as afternoon (13:00–17:00)
+- 9–12 → treat as morning (09:00–12:00)
+- 13–23 → 24h format, use as-is
+- Explicit "de la mañana" / "de la tarde" qualifier → resolve directly
+
+This rule applies to all flows that accept a time: appointments, availability queries,
+and working hours setup.
+
 ## Constraints
 - Never invent client names, amounts, dates, or tax identifiers.
 - Never fabricate invoice numbers — always use the sequential counter from the system.
@@ -82,6 +97,18 @@ When a date is given without a year (e.g. "el jueves", "el 12 de julio", "July 1
 - If that date has not yet passed this year → use this year.
 - If it has already passed this year → use next year.
 Always resolve to the nearest future occurrence.
+
+## Time disambiguation
+When a time of 6, 7, or 8 is mentioned without an explicit AM/PM qualifier
+("de la mañana", "de la tarde") or a 24h indicator ("h" suffix, e.g. "7h"):
+- Ask before calling any tool: ¿Las [X] de la mañana o de la tarde? (Mañana / Tarde)
+- Do not proceed until the user clarifies.
+
+All other hours are unambiguous — do not prompt:
+- 1–5 → treat as afternoon (13:00–17:00)
+- 9–12 → treat as morning (09:00–12:00)
+- 13–23 → 24h format, use as-is
+- Explicit "de la mañana" / "de la tarde" qualifier → resolve directly
 
 ## Constraints
 - Only share information about this specific client's own invoices and appointments.
