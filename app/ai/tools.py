@@ -269,6 +269,60 @@ _CONTRACTOR_TOOL_LIST: list[dict[str, Any]] = [
         },
     },
     {
+        "name": "update_budget",
+        "description": (
+            "Replace the line items or extend the validity of a draft budget. "
+            "Both lines and valid_until are optional — provide only what should change. "
+            "Blocked if status is sent, accepted, or invoiced."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "budget_id": {
+                    "type": "string",
+                    "description": "UUID of the budget to update.",
+                },
+                "lines": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "description": {"type": "string"},
+                            "quantity": {"type": "number"},
+                            "unit_price": {"type": "number"},
+                        },
+                        "required": ["description", "quantity", "unit_price"],
+                    },
+                    "description": (
+                        "Replacement line items. If provided, all existing lines are replaced."
+                    ),
+                },
+                "valid_until": {
+                    "type": "string",
+                    "description": "New expiry date (YYYY-MM-DD). Optional.",
+                },
+            },
+            "required": ["budget_id"],
+        },
+    },
+    {
+        "name": "delete_budget",
+        "description": (
+            "Delete a draft budget and its PDF from storage. "
+            "Blocked unless status is draft."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "budget_id": {
+                    "type": "string",
+                    "description": "UUID of the budget to delete.",
+                },
+            },
+            "required": ["budget_id"],
+        },
+    },
+    {
         "name": "connect_google_calendar",
         "description": (
             "Generate a one-time link for the contractor to connect their Google Calendar. "
