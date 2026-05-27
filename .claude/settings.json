@@ -1,5 +1,53 @@
 {
   "enabledPlugins": {
     "code-review@claude-plugins-official": true
+  },
+  "permissions": {
+    "allow": [
+      "Bash(git checkout *)",
+      "Bash(git switch *)",
+      "Bash(git branch *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(git status *)",
+      "Bash(git log *)",
+      "Bash(git diff *)",
+      "Bash(git show *)",
+      "Bash(git fetch *)",
+      "Bash(git pull *)",
+      "Bash(git restore *)",
+      "Bash(git stash *)",
+      "Bash(git rev-parse *)",
+      "Bash(gh issue *)",
+      "Bash(gh pr *)",
+      "Bash(gh run *)",
+      "Bash(gh secret *)",
+      "Bash(gh project *)",
+      "Bash(gh api *)",
+      "Bash(ruff *)",
+      "Bash(mypy *)",
+      "Bash(pytest *)",
+      "Bash(alembic *)",
+      "Bash(.venv/bin/ruff *)",
+      "Bash(.venv/bin/mypy *)",
+      "Bash(.venv/bin/pytest *)",
+      "Bash(.venv/bin/alembic *)",
+      "Bash(docker compose *)",
+      "Bash(docker-compose *)",
+      "mcp__codegraph",
+      "mcp__codegraph__codegraph_explore",
+      "mcp__codegraph__codegraph_search",
+      "mcp__codegraph__codegraph_callers",
+      "mcp__codegraph__codegraph_callees",
+      "mcp__codegraph__codegraph_node",
+      "mcp__codegraph__codegraph_context",
+      "mcp__codegraph__codegraph_impact",
+      "mcp__codegraph__codegraph_files",
+      "mcp__codegraph__codegraph_status",
+      "Read",
+      "Edit",
+      "Write"
+    ]
   }
 }
