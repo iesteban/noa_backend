@@ -6,7 +6,7 @@ edit doesn't silently revert a product decision.
 """
 from __future__ import annotations
 
-from app.ai.prompts import CONTRACTOR_INSTRUCTIONS
+from app.ai.prompts import CLIENT_INSTRUCTIONS, CONTRACTOR_INSTRUCTIONS
 from app.ai.tools import CONTRACTOR_TOOLS
 
 
@@ -30,3 +30,23 @@ class TestContactAutosaveInstructions:
 
     def test_contractor_instructions_show_inline_confirmation_format(self) -> None:
         assert "Cliente guardado ✓" in CONTRACTOR_INSTRUCTIONS
+
+
+class TestTimeDisambiguation:
+    def test_contractor_instructions_prompt_for_6_7_8(self) -> None:
+        assert "6, 7, or 8" in CONTRACTOR_INSTRUCTIONS or "6, 7, 8" in CONTRACTOR_INSTRUCTIONS
+
+    def test_contractor_instructions_use_button_format(self) -> None:
+        assert "Mañana / Tarde" in CONTRACTOR_INSTRUCTIONS
+
+    def test_contractor_instructions_no_prompt_for_9_to_12(self) -> None:
+        assert "9–12" in CONTRACTOR_INSTRUCTIONS or "9-12" in CONTRACTOR_INSTRUCTIONS
+
+    def test_contractor_instructions_no_prompt_for_1_to_5(self) -> None:
+        assert "1–5" in CONTRACTOR_INSTRUCTIONS or "1-5" in CONTRACTOR_INSTRUCTIONS
+
+    def test_client_instructions_prompt_for_6_7_8(self) -> None:
+        assert "6, 7, or 8" in CLIENT_INSTRUCTIONS or "6, 7, 8" in CLIENT_INSTRUCTIONS
+
+    def test_client_instructions_use_button_format(self) -> None:
+        assert "Mañana / Tarde" in CLIENT_INSTRUCTIONS
