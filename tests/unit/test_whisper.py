@@ -11,11 +11,11 @@ from app.messaging.types import InboundMessage, MessageType
 
 
 @pytest.fixture(autouse=True)
-def reset_openai_client() -> None:
+def reset_groq_client() -> None:
     """Ensure the module-level client is reset between tests."""
-    whisper_module._openai = None
+    whisper_module._groq = None
     yield  # type: ignore[misc]
-    whisper_module._openai = None
+    whisper_module._groq = None
 
 
 def _mock_httpx_get(responses: list[MagicMock]) -> MagicMock:
@@ -43,11 +43,11 @@ def _audio_response(content: bytes = b"fake-audio") -> MagicMock:
 
 class TestTranscribe:
     async def test_returns_transcription_and_url(self) -> None:
-        mock_openai = AsyncMock()
-        mock_openai.audio.transcriptions.create = AsyncMock(
+        mock_groq = AsyncMock()
+        mock_groq.audio.transcriptions.create = AsyncMock(
             return_value=MagicMock(text="Añade a Ana García, teléfono 600123456")
         )
-        whisper_module._openai = mock_openai
+        whisper_module._groq = mock_groq
 
         with patch("httpx.AsyncClient") as mock_cls:
             mock_cls.side_effect = [
@@ -60,16 +60,16 @@ class TestTranscribe:
         assert "voice/abc.oga" in url
 
     async def test_url_contains_bot_token(self) -> None:
-        mock_openai = AsyncMock()
-        mock_openai.audio.transcriptions.create = AsyncMock(
+        mock_groq = AsyncMock()
+        mock_groq.audio.transcriptions.create = AsyncMock(
             return_value=MagicMock(text="hola")
         )
-        whisper_module._openai = mock_openai
+        whisper_module._groq = mock_groq
 
         with patch("httpx.AsyncClient") as mock_cls, \
              patch("app.ai.whisper.settings") as mock_settings:
             mock_settings.telegram_bot_token = "MY_TOKEN"
-            mock_settings.openai_api_key = "sk-test"
+            mock_settings.groq_api_key = "gsk-test"
             mock_cls.side_effect = [
                 _mock_httpx_get([_file_response("voice/xyz.oga")]),
                 _mock_httpx_get([_audio_response()]),
@@ -80,10 +80,10 @@ class TestTranscribe:
         assert "voice/xyz.oga" in url
 
     async def test_whisper_called_with_correct_params(self) -> None:
-        mock_openai = AsyncMock()
+        mock_groq = AsyncMock()
         mock_create = AsyncMock(return_value=MagicMock(text="transcripción"))
-        mock_openai.audio.transcriptions.create = mock_create
-        whisper_module._openai = mock_openai
+        mock_groq.audio.transcriptions.create = mock_create
+        whisper_module._groq = mock_groq
 
         with patch("httpx.AsyncClient") as mock_cls:
             mock_cls.side_effect = [
@@ -93,7 +93,7 @@ class TestTranscribe:
             await transcribe("fid")
 
         call_kwargs = mock_create.call_args.kwargs
-        assert call_kwargs["model"] == "whisper-1"
+        assert call_kwargs["model"] == "whisper-large-v3-turbo"
         assert call_kwargs["language"] == "es"
         filename, bio = call_kwargs["file"]
         assert filename == "voice.ogg"
@@ -112,11 +112,11 @@ class TestTranscribe:
                 await transcribe("bad_file_id")
 
     async def test_raises_on_whisper_api_failure(self) -> None:
-        mock_openai = AsyncMock()
-        mock_openai.audio.transcriptions.create = AsyncMock(
+        mock_groq = AsyncMock()
+        mock_groq.audio.transcriptions.create = AsyncMock(
             side_effect=Exception("Whisper API error")
         )
-        whisper_module._openai = mock_openai
+        whisper_module._groq = mock_groq
 
         with patch("httpx.AsyncClient") as mock_cls:
             mock_cls.side_effect = [

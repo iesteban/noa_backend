@@ -16,7 +16,8 @@ class Settings(BaseSettings):
     telegram_bot_token: str
     telegram_webhook_secret: str
     anthropic_api_key: str
-    openai_api_key: str
+    claude_model: str = "claude-haiku-4-5-20251001"
+    groq_api_key: str
     scw_access_key: str
     scw_secret_key: str
     scw_region: str = "fr-par"

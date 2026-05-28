@@ -11,15 +11,20 @@ from app.config import settings
 logger = logging.getLogger(__name__)
 
 _GRAPH_API = "https://graph.facebook.com/v19.0"
+_GROQ_BASE_URL = "https://api.groq.com/openai/v1"
+_WHISPER_MODEL = "whisper-large-v3-turbo"
 
-_openai: openai.AsyncOpenAI | None = None
+_groq: openai.AsyncOpenAI | None = None
 
 
-def _get_openai() -> openai.AsyncOpenAI:
-    global _openai
-    if _openai is None:
-        _openai = openai.AsyncOpenAI(api_key=settings.openai_api_key)
-    return _openai
+def _get_groq() -> openai.AsyncOpenAI:
+    global _groq
+    if _groq is None:
+        _groq = openai.AsyncOpenAI(
+            api_key=settings.groq_api_key,
+            base_url=_GROQ_BASE_URL,
+        )
+    return _groq
 
 
 async def _resolve_telegram_file_url(file_id: str) -> str:
@@ -35,8 +40,8 @@ async def _resolve_telegram_file_url(file_id: str) -> str:
 
 
 async def _transcribe(audio_bytes: bytes) -> str:
-    response = await _get_openai().audio.transcriptions.create(
-        model="whisper-1",
+    response = await _get_groq().audio.transcriptions.create(
+        model=_WHISPER_MODEL,
         file=("voice.ogg", io.BytesIO(audio_bytes)),
         language="es",
     )
