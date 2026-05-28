@@ -269,7 +269,7 @@ class TestCacheStructure:
             assert block.get("cache_control") == {"type": "ephemeral"}
 
     @pytest.mark.asyncio
-    async def test_model_is_sonnet(self) -> None:
+    async def test_model_comes_from_settings(self) -> None:
         cont = _contractor()
         db = _db(cont)
         session = _session(contractor_id=cont.id)
@@ -277,9 +277,17 @@ class TestCacheStructure:
         mock_api = AsyncMock()
         mock_api.messages.create = AsyncMock(return_value=_text_response("ok"))
 
-        with patch("app.ai.claude._make_client", return_value=mock_api):
+        with (
+            patch("app.ai.claude._make_client", return_value=mock_api),
+            patch("app.ai.claude.settings.claude_model", "claude-test-model-123"),
+        ):
             from app.ai.claude import call_claude
             await call_claude(db, session, "test")
 
         kwargs = mock_api.messages.create.call_args.kwargs
-        assert kwargs["model"] == "claude-sonnet-4-6"
+        assert kwargs["model"] == "claude-test-model-123"
+
+    @pytest.mark.asyncio
+    async def test_default_model_is_haiku(self) -> None:
+        from app.config import settings
+        assert settings.claude_model == "claude-haiku-4-5-20251001"
