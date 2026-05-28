@@ -38,7 +38,7 @@ jobs:
           TELEGRAM_BOT_TOKEN: dummy
           TELEGRAM_WEBHOOK_SECRET: dummy
           ANTHROPIC_API_KEY: dummy
-          OPENAI_API_KEY: dummy
+          GROQ_API_KEY: dummy
           SCW_ACCESS_KEY: dummy
           SCW_SECRET_KEY: dummy
         run: python -m app.scripts.sync_wa_templates
@@ -52,7 +52,7 @@ jobs:
           TELEGRAM_BOT_TOKEN: dummy
           TELEGRAM_WEBHOOK_SECRET: dummy
           ANTHROPIC_API_KEY: dummy
-          OPENAI_API_KEY: dummy
+          GROQ_API_KEY: dummy
           SCW_ACCESS_KEY: dummy
           SCW_SECRET_KEY: dummy
         run: python -m app.scripts.sync_wa_templates

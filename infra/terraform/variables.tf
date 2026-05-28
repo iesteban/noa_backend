@@ -67,8 +67,8 @@ variable "telegram_webhook_secret" {
   sensitive   = true
 }
 
-variable "openai_api_key" {
-  description = "OpenAI API key for Whisper"
+variable "groq_api_key" {
+  description = "Groq API key for Whisper transcription"
   type        = string
   sensitive   = true
 }
