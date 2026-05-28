@@ -72,6 +72,8 @@ async def build_contractor_context(db: AsyncSession, contractor: Contractor) -> 
     ]
     if contractor.nif:
         lines.append(f"NIF: {contractor.nif}")
+    if contractor.address:
+        lines.append(f"Dirección: {contractor.address}")
     if contractor.iban:
         lines.append(f"IBAN: {contractor.iban}")
     lines += [

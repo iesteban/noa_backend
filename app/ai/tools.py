@@ -500,6 +500,63 @@ _CONTRACTOR_TOOL_LIST: list[dict[str, Any]] = [
         },
     },
     {
+        "name": "update_contractor",
+        "description": (
+            "Update the contractor's own profile. "
+            "Pass only the fields that should change — any subset of "
+            "name, business_name, nif, address, iban, email, iva_rate, irpf_rate. "
+            "Always show the proposed changes to the contractor and get explicit "
+            "confirmation before calling. "
+            "Tax rates accept either a fraction (0.21) or a percentage (21 or '21%'). "
+            "The updated profile takes effect on the next session — Layer 3 is "
+            "rebuilt then."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Contractor's personal name.",
+                },
+                "business_name": {
+                    "type": "string",
+                    "description": "Trading name shown on invoices and budgets.",
+                },
+                "nif": {
+                    "type": "string",
+                    "description": "Tax ID (NIF, NIE, or CIF).",
+                },
+                "address": {
+                    "type": "string",
+                    "description": "Postal address shown on invoices.",
+                },
+                "iban": {
+                    "type": "string",
+                    "description": (
+                        "Bank account IBAN. Spaces are normalised away."
+                    ),
+                },
+                "email": {
+                    "type": "string",
+                    "description": "Email used when sending invoices by email.",
+                },
+                "iva_rate": {
+                    "type": "number",
+                    "description": (
+                        "IVA rate. Accepts 0.21 or 21 (interpreted as percent)."
+                    ),
+                },
+                "irpf_rate": {
+                    "type": "number",
+                    "description": (
+                        "IRPF rate. Accepts 0.15 or 15 (interpreted as percent)."
+                    ),
+                },
+            },
+            "required": [],
+        },
+    },
+    {
         "name": "list_instructions",
         "description": "Return the contractor's saved personal instructions.",
         "input_schema": {
