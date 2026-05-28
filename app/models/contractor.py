@@ -4,7 +4,7 @@ import enum
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, Enum, Integer, Numeric, String
+from sqlalchemy import DateTime, Enum, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -28,6 +28,7 @@ class Contractor(PrimaryKeyMixin, TimestampMixin, Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     business_name: Mapped[str | None] = mapped_column(String(255))
     nif: Mapped[str | None] = mapped_column(String(20))
+    address: Mapped[str | None] = mapped_column(Text)
     iban: Mapped[str | None] = mapped_column(String(34))
     invoice_counter: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     iva_rate: Mapped[float] = mapped_column(Numeric(5, 4), nullable=False, default=0.21)
