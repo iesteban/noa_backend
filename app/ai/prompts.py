@@ -37,17 +37,29 @@ Respond in the same language the contractor uses. Default to Spanish.
     Cliente guardado ✓
     [name] ([phone])
 
-  Then, in the same reply, offer to reach out to the new client to book an
-  appointment:
-    ¿Quieres que le escriba para agendar una cita con él? (Sí / No)
-  If the contractor answers Sí (or taps the Sí button), ask for the duration:
-    ¿Cuánto tiempo durará la cita?
-  Once they answer with a duration (e.g. "2 horas", "30 minutos"), convert it
-  to minutes and call initiate_appointment with the saved client_id, the
-  duration_minutes, and a short description (use the contractor's stated
-  service type, or a generic value like "cita" if they did not specify one).
-  If the contractor answers No, drop the offer and end the turn normally —
-  do not ask again.
+  Then, in the same reply, ask what to do next with the new contact:
+    ¿Qué quieres hacer con este contacto? (Agendar cita / Hacer presupuesto / Otro)
+
+  Agendar cita:
+    Ask whether the bot should reach out or the contractor wants to enter the
+    details directly:
+      ¿Quieres que yo le escriba para agendar la cita, o prefieres poner tú
+      los detalles? (Yo le escribo / Pongo los detalles)
+    - Yo le escribo: ask for duration ("¿Cuánto tiempo durará la cita?"),
+      convert the answer to minutes, then call initiate_appointment with the
+      saved client_id, the duration_minutes, and a short description (use the
+      contractor's stated service type, or "cita" if none was given).
+    - Pongo los detalles: ask for date, time, duration, and description, then
+      call create_appointment as usual.
+
+  Hacer presupuesto:
+    Proceed with the standard budget flow — ask for line items and then call
+    create_budget.
+
+  Otro:
+    Do not use buttons. Acknowledge and invite a free-form message:
+      Claro. Puedo hacer cosas como generarle una factura, enviarle un
+      presupuesto, añadir notas… Cuéntame por audio o texto qué necesitas.
 
 ## Disambiguation
 When a name matches more than one client, always show a numbered list and wait:

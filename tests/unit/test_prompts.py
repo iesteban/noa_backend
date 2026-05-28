@@ -32,38 +32,43 @@ class TestContactAutosaveInstructions:
         assert "Cliente guardado ✓" in CONTRACTOR_INSTRUCTIONS
 
 
-class TestPostContactAppointmentOffer:
-    """After a contact-share save, Noa offers to reach out and book an appointment."""
+class TestPostContactNextStepMenu:
+    """After a contact-share save, Noa shows a 3-option next-step menu."""
 
-    def test_contractor_instructions_offer_appointment_after_contact_save(self) -> None:
-        assert "¿Quieres que le escriba para agendar una cita con él?" in CONTRACTOR_INSTRUCTIONS
+    def test_contractor_instructions_show_next_step_question(self) -> None:
+        assert "¿Qué quieres hacer con este contacto?" in CONTRACTOR_INSTRUCTIONS
 
-    def test_contractor_instructions_use_button_format_for_offer(self) -> None:
-        # Trailing "(Sí / No)" lets the messaging layer render native buttons.
-        assert "(Sí / No)" in CONTRACTOR_INSTRUCTIONS
+    def test_contractor_instructions_use_three_button_format(self) -> None:
+        assert "(Agendar cita / Hacer presupuesto / Otro)" in CONTRACTOR_INSTRUCTIONS
 
-    def test_contractor_instructions_ask_for_duration_on_yes(self) -> None:
-        assert "¿Cuánto tiempo durará la cita?" in CONTRACTOR_INSTRUCTIONS
+    def test_contractor_instructions_agendar_cita_asks_who_schedules(self) -> None:
+        assert "Yo le escribo" in CONTRACTOR_INSTRUCTIONS
+        assert "Pongo los detalles" in CONTRACTOR_INSTRUCTIONS
 
-    def test_contractor_instructions_call_initiate_appointment_after_duration(self) -> None:
+    def test_contractor_instructions_bot_path_calls_initiate_appointment(self) -> None:
         assert "initiate_appointment" in CONTRACTOR_INSTRUCTIONS
 
-    def test_contractor_instructions_drop_offer_on_no(self) -> None:
-        # The instructions must explicitly tell Noa not to keep nagging.
-        assert "do not ask again" in CONTRACTOR_INSTRUCTIONS.lower()
+    def test_contractor_instructions_manual_path_calls_create_appointment(self) -> None:
+        assert "create_appointment" in CONTRACTOR_INSTRUCTIONS
 
-    def test_register_client_tool_description_mentions_offer_follow_up(self) -> None:
-        desc = _register_client_description()
-        assert "initiate_appointment" in desc
-        assert "shared contact" in desc.lower() or "contacto compartido" in desc.lower()
+    def test_contractor_instructions_presupuesto_path_calls_create_budget(self) -> None:
+        assert "create_budget" in CONTRACTOR_INSTRUCTIONS
 
-    def test_register_client_tool_description_skips_offer_for_typed_input(self) -> None:
+    def test_contractor_instructions_otro_suggests_audio_or_text(self) -> None:
+        # "Otro" path must not use buttons and must suggest a free-form voice/text message.
+        instr = CONTRACTOR_INSTRUCTIONS.lower()
+        assert "audio" in instr or "voz" in instr
+
+    def test_register_client_tool_description_shows_next_step_menu(self) -> None:
         desc = _register_client_description()
-        # Typed-input registration should not trigger the appointment follow-up.
-        assert (
-            "do not offer the appointment follow-up" in desc.lower()
-            or "no appointment follow-up" in desc.lower()
-        )
+        assert "Agendar cita" in desc
+        assert "Hacer presupuesto" in desc
+        assert "Otro" in desc
+
+    def test_register_client_tool_description_skips_menu_for_typed_input(self) -> None:
+        desc = _register_client_description()
+        # Typed-input registration should not trigger the next-step menu.
+        assert "do not offer the next-step menu" in desc.lower()
 
 
 class TestTimeDisambiguation:
