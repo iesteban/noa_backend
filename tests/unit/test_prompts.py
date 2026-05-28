@@ -32,6 +32,45 @@ class TestContactAutosaveInstructions:
         assert "Cliente guardado ✓" in CONTRACTOR_INSTRUCTIONS
 
 
+class TestPostContactNextStepMenu:
+    """After a contact-share save, Noa shows a 3-option next-step menu."""
+
+    def test_contractor_instructions_show_next_step_question(self) -> None:
+        assert "¿Qué quieres hacer con este contacto?" in CONTRACTOR_INSTRUCTIONS
+
+    def test_contractor_instructions_use_three_button_format(self) -> None:
+        assert "(Agendar cita / Hacer presupuesto / Otro)" in CONTRACTOR_INSTRUCTIONS
+
+    def test_contractor_instructions_agendar_cita_asks_who_schedules(self) -> None:
+        assert "Yo le escribo" in CONTRACTOR_INSTRUCTIONS
+        assert "Pongo los detalles" in CONTRACTOR_INSTRUCTIONS
+
+    def test_contractor_instructions_bot_path_calls_initiate_appointment(self) -> None:
+        assert "initiate_appointment" in CONTRACTOR_INSTRUCTIONS
+
+    def test_contractor_instructions_manual_path_calls_create_appointment(self) -> None:
+        assert "create_appointment" in CONTRACTOR_INSTRUCTIONS
+
+    def test_contractor_instructions_presupuesto_path_calls_create_budget(self) -> None:
+        assert "create_budget" in CONTRACTOR_INSTRUCTIONS
+
+    def test_contractor_instructions_otro_suggests_audio_or_text(self) -> None:
+        # "Otro" path must not use buttons and must suggest a free-form voice/text message.
+        instr = CONTRACTOR_INSTRUCTIONS.lower()
+        assert "audio" in instr or "voz" in instr
+
+    def test_register_client_tool_description_shows_next_step_menu(self) -> None:
+        desc = _register_client_description()
+        assert "Agendar cita" in desc
+        assert "Hacer presupuesto" in desc
+        assert "Otro" in desc
+
+    def test_register_client_tool_description_skips_menu_for_typed_input(self) -> None:
+        desc = _register_client_description()
+        # Typed-input registration should not trigger the next-step menu.
+        assert "do not offer the next-step menu" in desc.lower()
+
+
 class TestTimeDisambiguation:
     def test_contractor_instructions_prompt_for_6_7_8(self) -> None:
         assert "6, 7, or 8" in CONTRACTOR_INSTRUCTIONS or "6, 7, 8" in CONTRACTOR_INSTRUCTIONS
