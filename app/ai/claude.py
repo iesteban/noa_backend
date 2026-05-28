@@ -18,7 +18,6 @@ from app.models.session import ConversationSession, Message, UserType
 
 logger = logging.getLogger(__name__)
 
-_MODEL = "claude-sonnet-4-6"
 _MAX_TOKENS = 2048
 _HISTORY_LIMIT = 20
 _MAX_TOOL_ROUNDS = 5
@@ -93,7 +92,7 @@ async def call_claude(
 
     for _ in range(_MAX_TOOL_ROUNDS):
         response = await client.messages.create(
-            model=_MODEL,
+            model=settings.claude_model,
             max_tokens=_MAX_TOKENS,
             system=system,  # type: ignore[arg-type]
             tools=tools,  # type: ignore[arg-type]
