@@ -14,8 +14,12 @@ _CONTRACTOR_TOOL_LIST: list[dict[str, Any]] = [
             "single phone number, call this tool immediately — no confirmation needed. "
             "When the contact has multiple phones, ask which one to use, then call immediately "
             "after the contractor picks — still no extra confirmation. "
+            "After the client is saved from a shared contact, follow up in the same reply with "
+            "an offer to reach out and book an appointment "
+            "(\"¿Quieres que le escriba para agendar una cita con él? (Sí / No)\"); "
+            "if the contractor accepts, ask for the duration and then call initiate_appointment. "
             "For any other registration (typed name/phone), show the details and get confirmation "
-            "before calling. "
+            "before calling — do not offer the appointment follow-up in that case. "
             "Returns a warning if a client with the same name already exists — ask the contractor "
             "whether to proceed, then call again with force=true if they confirm."
         ),

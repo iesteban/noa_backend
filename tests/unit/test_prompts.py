@@ -32,6 +32,40 @@ class TestContactAutosaveInstructions:
         assert "Cliente guardado ✓" in CONTRACTOR_INSTRUCTIONS
 
 
+class TestPostContactAppointmentOffer:
+    """After a contact-share save, Noa offers to reach out and book an appointment."""
+
+    def test_contractor_instructions_offer_appointment_after_contact_save(self) -> None:
+        assert "¿Quieres que le escriba para agendar una cita con él?" in CONTRACTOR_INSTRUCTIONS
+
+    def test_contractor_instructions_use_button_format_for_offer(self) -> None:
+        # Trailing "(Sí / No)" lets the messaging layer render native buttons.
+        assert "(Sí / No)" in CONTRACTOR_INSTRUCTIONS
+
+    def test_contractor_instructions_ask_for_duration_on_yes(self) -> None:
+        assert "¿Cuánto tiempo durará la cita?" in CONTRACTOR_INSTRUCTIONS
+
+    def test_contractor_instructions_call_initiate_appointment_after_duration(self) -> None:
+        assert "initiate_appointment" in CONTRACTOR_INSTRUCTIONS
+
+    def test_contractor_instructions_drop_offer_on_no(self) -> None:
+        # The instructions must explicitly tell Noa not to keep nagging.
+        assert "do not ask again" in CONTRACTOR_INSTRUCTIONS.lower()
+
+    def test_register_client_tool_description_mentions_offer_follow_up(self) -> None:
+        desc = _register_client_description()
+        assert "initiate_appointment" in desc
+        assert "shared contact" in desc.lower() or "contacto compartido" in desc.lower()
+
+    def test_register_client_tool_description_skips_offer_for_typed_input(self) -> None:
+        desc = _register_client_description()
+        # Typed-input registration should not trigger the appointment follow-up.
+        assert (
+            "do not offer the appointment follow-up" in desc.lower()
+            or "no appointment follow-up" in desc.lower()
+        )
+
+
 class TestTimeDisambiguation:
     def test_contractor_instructions_prompt_for_6_7_8(self) -> None:
         assert "6, 7, or 8" in CONTRACTOR_INSTRUCTIONS or "6, 7, 8" in CONTRACTOR_INSTRUCTIONS

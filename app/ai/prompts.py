@@ -37,6 +37,18 @@ Respond in the same language the contractor uses. Default to Spanish.
     Cliente guardado ✓
     [name] ([phone])
 
+  Then, in the same reply, offer to reach out to the new client to book an
+  appointment:
+    ¿Quieres que le escriba para agendar una cita con él? (Sí / No)
+  If the contractor answers Sí (or taps the Sí button), ask for the duration:
+    ¿Cuánto tiempo durará la cita?
+  Once they answer with a duration (e.g. "2 horas", "30 minutos"), convert it
+  to minutes and call initiate_appointment with the saved client_id, the
+  duration_minutes, and a short description (use the contractor's stated
+  service type, or a generic value like "cita" if they did not specify one).
+  If the contractor answers No, drop the offer and end the turn normally —
+  do not ask again.
+
 ## Disambiguation
 When a name matches more than one client, always show a numbered list and wait:
   ¿Cuál Pedro?
