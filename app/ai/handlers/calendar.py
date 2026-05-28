@@ -32,6 +32,18 @@ _WORK_END = time(18, 0)
 _SLOT_MINUTES = 60
 _MAX_SLOTS = 10
 
+_WORKING_HOURS_NUDGE_FLAG = "working_hours_nudge_shown"
+_WORKING_HOURS_NUDGE_INSTRUCTION = (
+    "\n\n[SYSTEM NUDGE — show to contractor on top of the answer above, "
+    "only once per session]\n"
+    "El contratista aún no tiene horario laboral configurado. "
+    "Pregúntale en este turno, después de tu respuesta normal: "
+    "«Por cierto, aún no tienes horario laboral configurado. "
+    "¿Quieres indicarme en qué horas quieres que se agenden las citas automáticamente?» "
+    "Si dice que sí, recoge los días y horas y llama a set_working_hours. "
+    "Si dice que ahora no, sigue con la conversación normal y no insistas más en este turno."
+)
+
 
 # ---------------------------------------------------------------------------
 # Internal helpers
@@ -145,6 +157,27 @@ async def _check_working_hours(
     return None
 
 
+async def _maybe_working_hours_nudge(
+    db: AsyncSession,
+    session: ConversationSession,
+    contractor_id: uuid.UUID,
+) -> str:
+    """Return a one-shot nudge suffix when working hours are unset, else ''.
+
+    The nudge fires at most once per session: it is gated by a flag stored on
+    session.context. Once shown — or once working hours have been configured —
+    subsequent calls in the same or future sessions return an empty string.
+    """
+    if session.context.get(_WORKING_HOURS_NUDGE_FLAG):
+        return ""
+    schedule = await load_working_hours(db, contractor_id)
+    if schedule:
+        return ""
+    session.context = {**session.context, _WORKING_HOURS_NUDGE_FLAG: True}
+    await db.flush()
+    return _WORKING_HOURS_NUDGE_INSTRUCTION
+
+
 # ---------------------------------------------------------------------------
 # Tool handlers
 # ---------------------------------------------------------------------------
@@ -220,9 +253,10 @@ async def handle_get_availability(
         db.add(pending)
         await db.flush()
         url = _connect_url(state)
+        nudge = await _maybe_working_hours_nudge(db, session, session.contractor_id)
         return (
             "No tienes Google Calendar conectado. "
-            f"Conéctalo aquí para ver tu disponibilidad real:\n{url}"
+            f"Conéctalo aquí para ver tu disponibilidad real:\n{url}{nudge}"
         )
 
     provider = _provider or GoogleCalendarProvider(token, db)
@@ -240,7 +274,8 @@ async def handle_get_availability(
         return "No se pudo consultar el calendario. Inténtalo de nuevo."
 
     slots = _compute_free_slots(date_from, date_to, busy, working_hours or None)
-    return _format_slots(slots)
+    nudge = await _maybe_working_hours_nudge(db, session, session.contractor_id)
+    return _format_slots(slots) + nudge
 
 
 @register("create_appointment")
@@ -317,13 +352,14 @@ async def handle_create_appointment(
             calendar_note = " | (No se pudo sincronizar con Google Calendar)"
 
     starts_str = starts_at.strftime("%-d %b %Y a las %H:%M")
+    nudge = await _maybe_working_hours_nudge(db, session, session.contractor_id)
     return (
         f"Cita creada."
         f" id={appointment.id}"
         f" | {description}"
         f" | {starts_str}"
         f" | {duration_minutes} min"
-        f"{calendar_note}"
+        f"{calendar_note}{nudge}"
     )
 
 
@@ -419,9 +455,10 @@ async def handle_initiate_appointment(
         db, session.contractor_id, client_id, duration_minutes, description
     )
     send_note = await _send_appointment_request_template(client, contractor, description)
+    nudge = await _maybe_working_hours_nudge(db, session, session.contractor_id)
 
     return (
         f"Cita pendiente creada. id={appointment.id} | "
         f"Cliente: {client.name} | Duración: {duration_minutes} min | "
-        f"Servicio: {description} | {send_note}"
+        f"Servicio: {description} | {send_note}{nudge}"
     )
