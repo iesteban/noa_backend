@@ -7,6 +7,7 @@ import sentry_sdk
 from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Query, Request
 from fastapi.responses import PlainTextResponse
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.claude import call_claude, get_recent_messages
@@ -192,10 +193,15 @@ async def _dispatch(inbound: InboundMessage, send: MessageSender, channel: str) 
 
         history = await get_recent_messages(db, session.id)
 
-        await append_message(
-            db, session.id, MessageRole.user, text, media_url=media_url,
-            external_id=inbound.external_id,
-        )
+        try:
+            await append_message(
+                db, session.id, MessageRole.user, text, media_url=media_url,
+                external_id=inbound.external_id,
+            )
+        except IntegrityError:
+            await db.rollback()
+            logger.info("Duplicate webhook %s — skipping (concurrent race)", inbound.external_id)
+            return
 
         if await _try_handle_pending_invoice_data(
             db, session, text, send, inbound.recipient_id

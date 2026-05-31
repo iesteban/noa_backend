@@ -22,6 +22,7 @@ def parse_update(update: TelegramUpdate) -> InboundMessage | None:
             message_type=MessageType.text,
             text=cq.data,
             file_id=None,
+            external_id=str(update.update_id),
         )
 
     message = update.message or update.edited_message
@@ -39,6 +40,7 @@ def parse_update(update: TelegramUpdate) -> InboundMessage | None:
             message_type=MessageType.text,
             text=message.text,
             file_id=None,
+            external_id=str(update.update_id),
         )
 
     if message.voice is not None:
@@ -49,6 +51,7 @@ def parse_update(update: TelegramUpdate) -> InboundMessage | None:
             message_type=MessageType.voice,
             text=message.caption,
             file_id=message.voice.file_id,
+            external_id=str(update.update_id),
         )
 
     if message.photo is not None and len(message.photo) > 0:
@@ -60,6 +63,7 @@ def parse_update(update: TelegramUpdate) -> InboundMessage | None:
             message_type=MessageType.photo,
             text=message.caption,
             file_id=message.photo[-1].file_id,
+            external_id=str(update.update_id),
         )
 
     if message.document is not None:
@@ -70,6 +74,7 @@ def parse_update(update: TelegramUpdate) -> InboundMessage | None:
             message_type=MessageType.document,
             text=message.caption,
             file_id=message.document.file_id,
+            external_id=str(update.update_id),
         )
 
     if message.contact is not None:
@@ -91,6 +96,7 @@ def parse_update(update: TelegramUpdate) -> InboundMessage | None:
             message_type=MessageType.contact,
             text=text,
             file_id=None,
+            external_id=str(update.update_id),
         )
 
     logger.info(
@@ -105,4 +111,5 @@ def parse_update(update: TelegramUpdate) -> InboundMessage | None:
         message_type=MessageType.unknown,
         text=None,
         file_id=None,
+        external_id=str(update.update_id),
     )
