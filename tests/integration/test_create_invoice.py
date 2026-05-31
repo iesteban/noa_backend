@@ -4,7 +4,7 @@ from __future__ import annotations
 import uuid
 from collections.abc import Iterator
 from datetime import date
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from sqlalchemy import select
@@ -30,9 +30,26 @@ _SIGNED_PDF_URL = "https://noa-dev.s3.fr-par.scw.cloud/fake/invoices/test.pdf?X-
 
 
 @pytest.fixture(autouse=True)
-def _stub_presign() -> Iterator[None]:
+def _stub_presign(request: pytest.FixtureRequest) -> Iterator[None]:
+    # Tests that exercise the real presign wiring opt out via no_presign_stub.
+    if "no_presign_stub" in request.fixturenames:
+        yield
+        return
     with patch("app.ai.handlers.invoices.presign_url", return_value=_SIGNED_PDF_URL):
         yield
+
+
+@pytest.fixture
+def no_presign_stub() -> None:
+    """Marker fixture: opt out of the presign_url stub for end-to-end link checks."""
+    return None
+
+
+def _fake_s3() -> MagicMock:
+    """A boto3 stand-in whose presigner returns a signature-bearing URL."""
+    s3 = MagicMock()
+    s3.generate_presigned_url.return_value = "https://signed.example/test.pdf?sig=abc"
+    return s3
 
 
 def _make_job_input(client_id: uuid.UUID, job_ids: list[uuid.UUID], **overrides: object) -> dict:  # type: ignore[type-arg]
@@ -229,6 +246,34 @@ class TestCreateInvoiceIntegration:
             )
 
         assert _SIGNED_PDF_URL in result
+
+    async def test_link_is_signed_not_canonical(
+        self, db: AsyncSession, no_presign_stub: None
+    ) -> None:
+        """End-to-end guard: the link handed to the contractor must be the
+        pre-signed URL, never the bare (private, inaccessible) canonical URL.
+
+        This deliberately does NOT stub presign_url — only the boto3 client is
+        mocked — so it fails if a future change reverts to returning the
+        canonical/public URL the way commit 875bde0 did.
+        """
+        contractor = await make_contractor(db)
+        client = await make_client(db, contractor)
+        session = await make_session(db, contractor)
+        job = await _insert_job(db, contractor.id, client.id)
+
+        with (
+            patch("app.ai.handlers.invoices.upload_file", return_value=_FAKE_PDF_URL),
+            patch("app.storage.client._make_s3", return_value=_fake_s3()),
+        ):
+            result = await handle_create_invoice(
+                _make_job_input(client.id, [job.id]), db, session
+            )
+
+        # The signed link carries a signature query param ...
+        assert "PDF: https://signed.example/test.pdf?sig=abc" in result
+        # ... and the bare canonical URL must NOT be what we hand to the user.
+        assert f"PDF: {_FAKE_PDF_URL}" not in result
 
     async def test_data_isolation_rejects_other_contractor_client(
         self, db: AsyncSession
