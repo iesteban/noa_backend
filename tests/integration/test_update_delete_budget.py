@@ -2,9 +2,11 @@
 from __future__ import annotations
 
 import uuid
+from collections.abc import Iterator
 from datetime import date
 from unittest.mock import patch
 
+import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,6 +16,17 @@ from tests.integration.conftest import make_client, make_contractor, make_sessio
 
 _FAKE_PDF_URL = "https://noa-dev.s3.fr-par.scw.cloud/fake/budgets/test.pdf"
 _FAKE_PDF_URL_2 = "https://noa-dev.s3.fr-par.scw.cloud/fake/budgets/test2.pdf"
+
+
+@pytest.fixture(autouse=True)
+def _stub_presign() -> Iterator[None]:
+    # The bucket is private — the handler presigns at send time. Stub it so the
+    # reply link is deterministic and no real boto3 call is made.
+    with patch(
+        "app.ai.handlers.budgets.presign_url",
+        side_effect=lambda url, *a, **k: f"{url}?X-Amz-Signature=test",
+    ):
+        yield
 
 
 async def _make_budget(

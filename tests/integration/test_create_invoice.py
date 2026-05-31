@@ -2,9 +2,11 @@
 from __future__ import annotations
 
 import uuid
+from collections.abc import Iterator
 from datetime import date
 from unittest.mock import patch
 
+import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -22,6 +24,15 @@ async def make_client(db: AsyncSession, contractor, **overrides: object):  # typ
     return await _make_client(db, contractor, **{**_CLIENT_LEGAL, **overrides})
 
 _FAKE_PDF_URL = "https://noa-dev.s3.fr-par.scw.cloud/fake/invoices/test.pdf"
+# The bucket is private, so the handler hands back a pre-signed link, not the
+# canonical storage URL. presign_url is stubbed to this deterministic value.
+_SIGNED_PDF_URL = "https://noa-dev.s3.fr-par.scw.cloud/fake/invoices/test.pdf?X-Amz-Signature=test"
+
+
+@pytest.fixture(autouse=True)
+def _stub_presign() -> Iterator[None]:
+    with patch("app.ai.handlers.invoices.presign_url", return_value=_SIGNED_PDF_URL):
+        yield
 
 
 def _make_job_input(client_id: uuid.UUID, job_ids: list[uuid.UUID], **overrides: object) -> dict:  # type: ignore[type-arg]
@@ -188,6 +199,7 @@ class TestCreateInvoiceIntegration:
 
         rows = await db.execute(select(Invoice).where(Invoice.contractor_id == contractor.id))
         inv = rows.scalars().one()
+        # The persisted reference stays the canonical storage URL.
         assert inv.pdf_url == _FAKE_PDF_URL
 
     async def test_result_contains_invoice_number_and_total(self, db: AsyncSession) -> None:
@@ -203,6 +215,20 @@ class TestCreateInvoiceIntegration:
 
         assert "Ana López" in result
         assert "2025-001" in result
+
+    async def test_result_contains_presigned_pdf_link(self, db: AsyncSession) -> None:
+        """Regression: the contractor must get a working (pre-signed) PDF link."""
+        contractor = await make_contractor(db)
+        client = await make_client(db, contractor)
+        session = await make_session(db, contractor)
+        job = await _insert_job(db, contractor.id, client.id)
+
+        with patch("app.ai.handlers.invoices.upload_file", return_value=_FAKE_PDF_URL):
+            result = await handle_create_invoice(
+                _make_job_input(client.id, [job.id]), db, session
+            )
+
+        assert _SIGNED_PDF_URL in result
 
     async def test_data_isolation_rejects_other_contractor_client(
         self, db: AsyncSession

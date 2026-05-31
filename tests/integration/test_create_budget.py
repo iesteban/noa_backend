@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 import uuid
+from collections.abc import Iterator
 from unittest.mock import patch
 
+import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,6 +14,15 @@ from app.models.budget import Budget, BudgetLine
 from tests.integration.conftest import make_client, make_contractor, make_session
 
 _FAKE_PDF_URL = "https://noa-dev.s3.fr-par.scw.cloud/fake/budgets/test.pdf"
+# The bucket is private — the handler hands back a pre-signed link, not the
+# canonical storage URL. presign_url is stubbed to this deterministic value.
+_SIGNED_PDF_URL = "https://noa-dev.s3.fr-par.scw.cloud/fake/budgets/test.pdf?X-Amz-Signature=test"
+
+
+@pytest.fixture(autouse=True)
+def _stub_presign() -> Iterator[None]:
+    with patch("app.ai.handlers.budgets.presign_url", return_value=_SIGNED_PDF_URL):
+        yield
 
 
 def _input(client_id: uuid.UUID, **overrides: object) -> dict:  # type: ignore[type-arg]
@@ -112,7 +123,19 @@ class TestCreateBudgetIntegration:
             await handle_create_budget(_input(client.id), db, session)
 
         rows = await db.execute(select(Budget).where(Budget.contractor_id == contractor.id))
+        # The persisted reference stays the canonical storage URL.
         assert rows.scalars().one().pdf_url == _FAKE_PDF_URL
+
+    async def test_result_contains_presigned_pdf_link(self, db: AsyncSession) -> None:
+        """Regression: the contractor must get a working (pre-signed) PDF link."""
+        contractor = await make_contractor(db)
+        client = await make_client(db, contractor)
+        session = await make_session(db, contractor)
+
+        with patch("app.ai.handlers.budgets.upload_file", return_value=_FAKE_PDF_URL):
+            result = await handle_create_budget(_input(client.id), db, session)
+
+        assert _SIGNED_PDF_URL in result
 
     async def test_optional_valid_until(self, db: AsyncSession) -> None:
         contractor = await make_contractor(db)

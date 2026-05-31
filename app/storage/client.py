@@ -25,24 +25,20 @@ def upload_file(
     entity_type: str,
     file_bytes: bytes,
     ext: str,
-    *,
-    public: bool = False,
 ) -> str:
     """Upload bytes to Scaleway Object Storage.
 
-    Returns the canonical storage URL used as the persistent reference.
-    Pass public=True for files that must be openable by anyone with the link
-    (invoices, budgets). Leave False for private files (voice notes, photos).
+    Returns the canonical storage URL used as the persistent reference. The
+    bucket is private, so callers hand out access via presign_url() at send
+    time rather than relying on public object ACLs — the API's IAM key cannot
+    set them and the bucket blocks public object access.
     """
     key = f"{contractor_id}/{entity_type}/{uuid.uuid4()}.{ext}"
-    kwargs: dict[str, object] = {
-        "Bucket": settings.scw_bucket,
-        "Key": key,
-        "Body": file_bytes,
-    }
-    if public:
-        kwargs["ACL"] = "public-read"
-    _make_s3().put_object(**kwargs)
+    _make_s3().put_object(
+        Bucket=settings.scw_bucket,
+        Key=key,
+        Body=file_bytes,
+    )
     return f"https://{settings.scw_bucket}.s3.{settings.scw_region}.scw.cloud/{key}"
 
 
