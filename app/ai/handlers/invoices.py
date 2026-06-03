@@ -18,7 +18,7 @@ from app.models.job import Job, JobStatus
 from app.models.session import ConversationSession, UserType
 from app.pdf.invoice import render_invoice_pdf
 from app.services.invoice import create_invoice
-from app.storage.client import upload_file
+from app.storage.client import presign_url, upload_file
 
 logger = logging.getLogger(__name__)
 
@@ -185,15 +185,17 @@ async def handle_create_invoice(
         client=client,
         lines=invoice.lines,
     )
-    pdf_url = upload_file(
+    storage_url = upload_file(
         contractor_id=contractor.id,
         entity_type="invoices",
         file_bytes=pdf_bytes,
         ext="pdf",
-        public=True,
     )
-    invoice.pdf_url = pdf_url
+    invoice.pdf_url = storage_url
     await db.flush()
+
+    # The bucket is private — hand the contractor a time-limited pre-signed link.
+    pdf_link = presign_url(storage_url)
 
     return (
         f"Factura generada."
@@ -203,7 +205,7 @@ async def handle_create_invoice(
         f" | IVA: {float(invoice.iva_amount):.2f}€"
         f" | IRPF: -{float(invoice.irpf_amount):.2f}€"
         f" | Total: {float(invoice.total):.2f}€"
-        f" | PDF: {pdf_url}"
+        f" | PDF: {pdf_link}"
     )
 
 
@@ -232,7 +234,9 @@ async def handle_get_invoice_pdf(
     if not invoice.pdf_url:
         return f"Invoice {invoice_number} has no PDF on file."
 
-    return invoice.pdf_url
+    # The bucket is private — return a time-limited pre-signed link, not the
+    # canonical (inaccessible) storage URL.
+    return presign_url(invoice.pdf_url)
 
 
 _MONTH_ES = {

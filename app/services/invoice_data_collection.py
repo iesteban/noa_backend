@@ -213,7 +213,6 @@ async def _upload_invoice_pdf(
             entity_type="invoices",
             file_bytes=pdf_bytes,
             ext="pdf",
-            public=True,
         )
         await db.flush()
     except Exception:
