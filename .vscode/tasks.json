@@ -7,6 +7,13 @@
   },
   "tasks": [
     {
+      "label": "Setup: install dependencies",
+      "type": "shell",
+      "command": "pip install -e .[dev]",
+      "group": "none",
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
       "label": "DB: start postgres",
       "type": "shell",
       "command": "docker compose up -d",
