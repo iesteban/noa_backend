@@ -21,6 +21,13 @@
       "presentation": { "reveal": "always", "panel": "shared" }
     },
     {
+      "label": "Dev: start services",
+      "type": "shell",
+      "command": "docker compose up -d && until docker compose exec -T db pg_isready -U noa -q 2>/dev/null; do sleep 1; done && alembic upgrade head",
+      "group": "none",
+      "presentation": { "reveal": "always", "panel": "shared", "focus": false }
+    },
+    {
       "label": "DB: stop postgres",
       "type": "shell",
       "command": "docker compose down",
