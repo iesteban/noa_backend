@@ -103,6 +103,20 @@
       "command": "bash scripts/set_webhook.sh ${input:ngrokUrl}",
       "group": "none",
       "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "Dev: send message (Telegram)",
+      "type": "shell",
+      "command": "python scripts/simulate_message.py --channel telegram --phone ${input:senderPhone} --message ${input:messageText}",
+      "group": "none",
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "Dev: send message (WhatsApp)",
+      "type": "shell",
+      "command": "python scripts/simulate_message.py --channel whatsapp --phone ${input:senderPhone} --message ${input:messageText}",
+      "group": "none",
+      "presentation": { "reveal": "always", "panel": "shared" }
     }
   ],
   "inputs": [
@@ -114,6 +128,16 @@
     {
       "id": "ngrokUrl",
       "description": "ngrok HTTPS URL (e.g. https://xxxx.ngrok-free.app)",
+      "type": "promptString"
+    },
+    {
+      "id": "senderPhone",
+      "description": "Sender phone number (digits only, e.g. 34600000001)",
+      "type": "promptString"
+    },
+    {
+      "id": "messageText",
+      "description": "Message text to send",
       "type": "promptString"
     }
   ]
