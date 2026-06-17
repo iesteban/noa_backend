@@ -11,6 +11,8 @@ from app.api.calendar_auth import router as calendar_auth_router
 from app.api.health import router as health_router
 from app.api.webhook import router as webhook_router
 from app.config import settings
+
+logging.basicConfig(level=getattr(logging, settings.log_level, logging.INFO))
 from app.core.sentry import scrub_sensitive_data
 
 if settings.sentry_dsn:

@@ -15,5 +15,35 @@ services:
     ports:
       - "6379:6379"
 
+  minio:
+    image: minio/minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${SCW_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${SCW_SECRET_KEY:-minioadmin}
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9000/minio/health/live || exit 1"]
+      interval: 3s
+      timeout: 5s
+      retries: 10
+
+  minio_init:
+    image: minio/mc
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_USER: ${SCW_ACCESS_KEY:-minioadmin}
+      MINIO_PASS: ${SCW_SECRET_KEY:-minioadmin}
+      BUCKET: ${SCW_BUCKET:-noa-dev}
+    entrypoint: ["/bin/sh", "-c", "mc alias set local http://minio:9000 $$MINIO_USER $$MINIO_PASS && mc mb --ignore-existing local/$$BUCKET"]
+    restart: on-failure
+
 volumes:
   postgres_data:
+  minio_data:

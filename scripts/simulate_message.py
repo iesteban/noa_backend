@@ -1,13 +1,20 @@
 #!/usr/bin/env python3
+
 """
 Simulate an inbound bot message against the local dev server.
 
 Usage:
-    python scripts/simulate_message.py --phone 34600000001 --message "Hola"
-    python scripts/simulate_message.py --phone 34600000001 --message "Hola" --channel whatsapp
-    python scripts/simulate_message.py --phone 34600000001 --message "Hola" --update-id 42
+    python scripts/simulate_message.py --message "Hola"
+    python scripts/simulate_message.py --message "Hola" --channel whatsapp
+    python scripts/simulate_message.py --message "Hola" --phone 34611223344
 """
+
 from __future__ import annotations
+
+# Default sender phone used when --phone is not provided.
+# Change this to a phone number registered as a contractor or client in your dev DB.
+DEFAULT_PHONE = "34600000001"
+
 
 import argparse
 import hashlib
@@ -89,7 +96,7 @@ def _hmac_signature(secret: str, body: bytes) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Simulate a bot webhook message locally.")
-    parser.add_argument("--phone", required=True, help="Sender phone (digits only, e.g. 34600000001)")
+    parser.add_argument("--phone", default=DEFAULT_PHONE, help="Sender phone (digits only). Defaults to DEFAULT_PHONE in this script.")
     parser.add_argument("--message", required=True, help="Text message to send")
     parser.add_argument("--channel", choices=["telegram", "whatsapp"], default="telegram")
     parser.add_argument("--host", default="http://localhost:8000")
@@ -102,7 +109,7 @@ def main() -> None:
         payload = _telegram_payload(args.phone, args.message, args.update_id)
         body = json.dumps(payload).encode()
         secret = env.get("TELEGRAM_WEBHOOK_SECRET", "")
-        url = f"{args.host}/webhook/telegram"
+        url = f"{args.host}/telegram"
         headers = {
             "Content-Type": "application/json",
             "X-Telegram-Bot-Api-Secret-Token": secret,
@@ -111,7 +118,7 @@ def main() -> None:
         payload = _whatsapp_payload(args.phone, args.message, args.update_id)
         body = json.dumps(payload).encode()
         app_secret = env.get("WHATSAPP_APP_SECRET", "")
-        url = f"{args.host}/webhook/whatsapp"
+        url = f"{args.host}/whatsapp"
         headers = {"Content-Type": "application/json"}
         if app_secret:
             headers["X-Hub-Signature-256"] = _hmac_signature(app_secret, body)
