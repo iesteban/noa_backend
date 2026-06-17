@@ -10,6 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.ai.dispatcher import register
+from app.messaging.telegram_sender import send_message as telegram_send
+from app.messaging.whatsapp_sender import send_message as whatsapp_send
 from app.messaging.whatsapp_sender import send_template_message
 from app.models.client import Client
 from app.models.contractor import Contractor
@@ -21,6 +23,18 @@ from app.services.invoice import create_invoice
 from app.storage.client import presign_url, upload_file
 
 logger = logging.getLogger(__name__)
+
+
+async def _send_pdf_to_contractor(contractor: Contractor, pdf_url: str, caption: str) -> None:
+    """Best-effort: send the PDF link to the contractor's chat. Never raises."""
+    message = f"{caption}\n{pdf_url}"
+    try:
+        if contractor.channel == "telegram" and contractor.telegram_chat_id:
+            await telegram_send(contractor.telegram_chat_id, message)
+        else:
+            await whatsapp_send(contractor.phone_number, message)
+    except Exception:
+        logger.warning("Could not send PDF to contractor %s", contractor.id)
 
 
 def _missing_legal_fields(client: Client) -> list[str]:
@@ -196,6 +210,12 @@ async def handle_create_invoice(
 
     # The bucket is private — hand the contractor a time-limited pre-signed link.
     pdf_link = presign_url(storage_url)
+
+    await _send_pdf_to_contractor(
+        contractor,
+        pdf_link,
+        f"Factura {invoice.invoice_number} — {client.name} — {float(invoice.total):.2f}€",
+    )
 
     return (
         f"Factura generada."

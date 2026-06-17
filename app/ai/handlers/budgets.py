@@ -10,6 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.ai.dispatcher import register
+from app.messaging.telegram_sender import send_message as telegram_send
+from app.messaging.whatsapp_sender import send_message as whatsapp_send
 from app.models.budget import Budget, BudgetStatus
 from app.models.client import Client
 from app.models.contractor import Contractor
@@ -106,6 +108,18 @@ async def _upload_budget_pdf(
     return presign_url(storage_url)
 
 
+async def _send_pdf_to_contractor(contractor: Contractor, pdf_url: str, caption: str) -> None:
+    """Best-effort: send the PDF link to the contractor's chat. Never raises."""
+    message = f"{caption}\n{pdf_url}"
+    try:
+        if contractor.channel == "telegram" and contractor.telegram_chat_id:
+            await telegram_send(contractor.telegram_chat_id, message)
+        else:
+            await whatsapp_send(contractor.phone_number, message)
+    except Exception:
+        logger.warning("Could not send PDF to contractor %s", contractor.id)
+
+
 def _try_delete_pdf(pdf_url: str, label: str) -> None:
     """Best-effort PDF deletion — logs on failure, never raises."""
     try:
@@ -160,6 +174,12 @@ async def handle_create_budget(
     )
 
     pdf_url = await _upload_budget_pdf(budget, contractor, db)
+
+    await _send_pdf_to_contractor(
+        contractor,
+        pdf_url,
+        f"Presupuesto generado para {client.name} — {float(budget.total):.2f}€",
+    )
 
     line_count = len(budget.lines)
     return (
