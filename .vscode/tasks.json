@@ -71,6 +71,7 @@
       "label": "Test: all",
       "type": "shell",
       "command": "pytest -v",
+      "dependsOn": ["Dev: start services"],
       "group": {
         "kind": "test",
         "isDefault": true
@@ -94,6 +95,7 @@
       "label": "Test: integration only",
       "type": "shell",
       "command": "pytest tests/integration -v",
+      "dependsOn": ["Dev: start services"],
       "group": "test",
       "presentation": {
         "reveal": "always",
@@ -104,6 +106,7 @@
       "label": "Test: with coverage",
       "type": "shell",
       "command": "pytest --cov=app --cov-report=term-missing",
+      "dependsOn": ["Dev: start services"],
       "group": "test",
       "presentation": {
         "reveal": "always",
