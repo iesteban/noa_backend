@@ -24,6 +24,10 @@ async def send_message(
     options: list[str] | None = None,
 ) -> None:
     """Send a text message (with optional inline keyboard) to a Telegram chat."""
+    if settings.environment == "development":
+        logger.info("[DEV] Telegram → %s: %s", recipient_id, text)
+        return
+
     url = _SEND_MESSAGE_URL.format(token=settings.telegram_bot_token)
     payload: dict[str, object] = {"chat_id": int(recipient_id), "text": text}
 

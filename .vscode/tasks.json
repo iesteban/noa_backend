@@ -7,88 +7,175 @@
   },
   "tasks": [
     {
+      "label": "Setup: install dependencies",
+      "type": "shell",
+      "command": "pip install -e .[dev]",
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
       "label": "DB: start postgres",
       "type": "shell",
       "command": "docker compose up -d",
       "group": "none",
-      "presentation": { "reveal": "always", "panel": "shared" }
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Dev: start services",
+      "type": "shell",
+      "command": "docker compose up -d && until docker compose exec -T db pg_isready -U noa -q 2>/dev/null; do sleep 1; done && alembic upgrade head",
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "focus": false
+      }
     },
     {
       "label": "DB: stop postgres",
       "type": "shell",
       "command": "docker compose down",
       "group": "none",
-      "presentation": { "reveal": "always", "panel": "shared" }
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
     },
     {
       "label": "DB: run migrations",
       "type": "shell",
       "command": "alembic upgrade head",
       "group": "none",
-      "presentation": { "reveal": "always", "panel": "shared" }
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
     },
     {
       "label": "DB: new migration",
       "type": "shell",
       "command": "alembic revision --autogenerate -m \"${input:migrationName}\"",
       "group": "none",
-      "presentation": { "reveal": "always", "panel": "shared" }
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
     },
     {
       "label": "Test: all",
       "type": "shell",
       "command": "pytest -v",
-      "group": { "kind": "test", "isDefault": true },
-      "presentation": { "reveal": "always", "panel": "shared" }
+      "dependsOn": ["Dev: start services"],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
     },
     {
       "label": "Test: unit only",
       "type": "shell",
       "command": "pytest tests/unit -v",
       "group": "test",
-      "presentation": { "reveal": "always", "panel": "shared" }
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
     },
     {
       "label": "Test: integration only",
       "type": "shell",
       "command": "pytest tests/integration -v",
+      "dependsOn": ["Dev: start services"],
       "group": "test",
-      "presentation": { "reveal": "always", "panel": "shared" }
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
     },
     {
       "label": "Test: with coverage",
       "type": "shell",
       "command": "pytest --cov=app --cov-report=term-missing",
+      "dependsOn": ["Dev: start services"],
       "group": "test",
-      "presentation": { "reveal": "always", "panel": "shared" }
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
     },
     {
       "label": "Lint: ruff check",
       "type": "shell",
       "command": "ruff check .",
       "group": "none",
-      "presentation": { "reveal": "always", "panel": "shared" }
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
     },
     {
       "label": "Lint: ruff fix",
       "type": "shell",
       "command": "ruff check --fix .",
       "group": "none",
-      "presentation": { "reveal": "always", "panel": "shared" }
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
     },
     {
       "label": "Type: mypy",
       "type": "shell",
       "command": "mypy app",
       "group": "none",
-      "presentation": { "reveal": "always", "panel": "shared" }
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
     },
     {
       "label": "Telegram: set webhook",
       "type": "shell",
       "command": "bash scripts/set_webhook.sh ${input:ngrokUrl}",
       "group": "none",
-      "presentation": { "reveal": "always", "panel": "shared" }
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Dev: send message (Telegram)",
+      "type": "shell",
+      "command": "python scripts/simulate_message.py --channel telegram --message \"${input:messageText}\"",
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "close": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Dev: send message (WhatsApp)",
+      "type": "shell",
+      "command": "python scripts/simulate_message.py --channel whatsapp --message \"${input:messageText}\"",
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "close": true
+      },
+      "problemMatcher": []
     }
   ],
   "inputs": [
@@ -100,6 +187,11 @@
     {
       "id": "ngrokUrl",
       "description": "ngrok HTTPS URL (e.g. https://xxxx.ngrok-free.app)",
+      "type": "promptString"
+    },
+    {
+      "id": "messageText",
+      "description": "Message text to send",
       "type": "promptString"
     }
   ]

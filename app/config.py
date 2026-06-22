@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     scw_secret_key: str
     scw_region: str = "fr-par"
     scw_bucket: str = "noa-dev"
+    s3_endpoint_url: str = ""  # override for local dev (e.g. http://localhost:9000 for MinIO)
     environment: str = "development"
     log_level: str = "INFO"
     google_client_id: str = ""

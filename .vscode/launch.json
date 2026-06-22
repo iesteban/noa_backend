@@ -5,21 +5,11 @@
       "name": "Run: uvicorn (dev)",
       "type": "debugpy",
       "request": "launch",
+      "preLaunchTask": "Dev: start services",
+      "python": "${workspaceFolder}/.venv/bin/python",
       "module": "uvicorn",
       "args": ["app.main:app", "--reload", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips=*"],
-      "env": {
-        "PYTHONPATH": "${workspaceFolder}"
-      },
-      "envFile": "${workspaceFolder}/.env",
-      "console": "integratedTerminal",
-      "justMyCode": false
-    },
-    {
-      "name": "Setup: install dependencies",
-      "type": "debugpy",
-      "request": "launch",
-      "module": "pip",
-      "args": ["install", "-e", ".[dev]"],
+      "cwd": "${workspaceFolder}",
       "env": {
         "PYTHONPATH": "${workspaceFolder}"
       },
@@ -31,8 +21,10 @@
       "name": "Setup: run migrations",
       "type": "debugpy",
       "request": "launch",
+      "python": "${workspaceFolder}/.venv/bin/python",
       "module": "alembic",
       "args": ["upgrade", "head"],
+      "cwd": "${workspaceFolder}",
       "env": {
         "PYTHONPATH": "${workspaceFolder}"
       },
@@ -44,8 +36,10 @@
       "name": "Test: all",
       "type": "debugpy",
       "request": "launch",
+      "python": "${workspaceFolder}/.venv/bin/python",
       "module": "pytest",
       "args": ["-v"],
+      "cwd": "${workspaceFolder}",
       "env": {
         "PYTHONPATH": "${workspaceFolder}"
       },
@@ -57,8 +51,10 @@
       "name": "Test: unit only",
       "type": "debugpy",
       "request": "launch",
+      "python": "${workspaceFolder}/.venv/bin/python",
       "module": "pytest",
       "args": ["tests/unit", "-v"],
+      "cwd": "${workspaceFolder}",
       "env": {
         "PYTHONPATH": "${workspaceFolder}"
       },
@@ -70,8 +66,10 @@
       "name": "Test: integration only",
       "type": "debugpy",
       "request": "launch",
+      "python": "${workspaceFolder}/.venv/bin/python",
       "module": "pytest",
       "args": ["tests/integration", "-v"],
+      "cwd": "${workspaceFolder}",
       "env": {
         "PYTHONPATH": "${workspaceFolder}"
       },
@@ -83,8 +81,10 @@
       "name": "Test: current file",
       "type": "debugpy",
       "request": "launch",
+      "python": "${workspaceFolder}/.venv/bin/python",
       "module": "pytest",
       "args": ["${file}", "-v"],
+      "cwd": "${workspaceFolder}",
       "env": {
         "PYTHONPATH": "${workspaceFolder}"
       },

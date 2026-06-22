@@ -123,6 +123,10 @@ async def send_message(
     - ≤10 options with titles ≤24 chars → list message (interactive/list)
     - Otherwise → numbered plain-text fallback
     """
+    if settings.environment == "development":
+        logger.info("[DEV] WhatsApp → %s: %s", recipient_id, text)
+        return
+
     if options:
         if (
             len(options) <= _WA_BUTTON_MAX

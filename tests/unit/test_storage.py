@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from app.config import settings
-from app.storage.client import presign_url, upload_file
+from app.storage.client import _base_url, presign_url, upload_file
 
 
 @pytest.fixture
@@ -22,9 +22,9 @@ def s3(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
 # ---------------------------------------------------------------------------
 
 class TestUploadFile:
-    def test_returns_https_url(self, s3: MagicMock) -> None:
+    def test_returns_url_with_base(self, s3: MagicMock) -> None:
         url = upload_file("abc-123", "voice", b"audio", "ogg")
-        assert url.startswith("https://")
+        assert url.startswith(_base_url())
 
     def test_url_contains_contractor_id(self, s3: MagicMock) -> None:
         url = upload_file("abc-123", "voice", b"audio", "ogg")
@@ -81,10 +81,7 @@ class TestUploadFile:
 
 class TestPresignUrl:
     def _storage_url(self, key: str = "abc/voice/x.ogg") -> str:
-        return (
-            f"https://{settings.scw_bucket}"
-            f".s3.{settings.scw_region}.scw.cloud/{key}"
-        )
+        return f"{_base_url()}/{key}"
 
     def test_returns_value_from_boto3(self, s3: MagicMock) -> None:
         s3.generate_presigned_url.return_value = "https://signed.example.com/file"

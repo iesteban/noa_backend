@@ -13,6 +13,8 @@ from app.api.webhook import router as webhook_router
 from app.config import settings
 from app.core.sentry import scrub_sensitive_data
 
+logging.basicConfig(level=getattr(logging, settings.log_level, logging.INFO))
+
 if settings.sentry_dsn:
     sentry_sdk.init(
         dsn=settings.sentry_dsn,
