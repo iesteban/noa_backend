@@ -11,20 +11,17 @@ Usage:
 
 from __future__ import annotations
 
-# Default sender phone used when --phone is not provided.
-# Change this to a phone number registered as a contractor or client in your dev DB.
-DEFAULT_PHONE = "34600000001"
-
-
 import argparse
 import hashlib
 import hmac
 import json
-import os
 import sys
 import time
 import urllib.request
 from pathlib import Path
+
+# Change to a phone registered as a contractor or client in your dev DB.
+DEFAULT_PHONE = "34600000001"
 
 
 def _load_env(path: Path) -> dict[str, str]:
@@ -96,7 +93,7 @@ def _hmac_signature(secret: str, body: bytes) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Simulate a bot webhook message locally.")
-    parser.add_argument("--phone", default=DEFAULT_PHONE, help="Sender phone (digits only). Defaults to DEFAULT_PHONE in this script.")
+    parser.add_argument("--phone", default=DEFAULT_PHONE, help="Sender phone (digits only).")
     parser.add_argument("--message", required=True, help="Text message to send")
     parser.add_argument("--channel", choices=["telegram", "whatsapp"], default="telegram")
     parser.add_argument("--host", default="http://localhost:8000")
