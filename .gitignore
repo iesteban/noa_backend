@@ -1,6 +1,8 @@
 .env
 .env.*
 .venv/
+.claude/agent-memory/
+.claude/worktrees/
 __pycache__/
 *.py[cod]
 .mypy_cache/

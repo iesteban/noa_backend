@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import UUID, DateTime, Enum, ForeignKey, Index, String, Text
+from sqlalchemy import UUID, DateTime, Enum, ForeignKey, Index, String, Text, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -46,7 +46,14 @@ class ConversationSession(PrimaryKeyMixin, TimestampMixin, Base):
 
 class Message(PrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "messages"
-    __table_args__ = (Index("ix_messages_external_id", "external_id", unique=True),)
+    __table_args__ = (
+        Index(
+            "ix_messages_external_id",
+            "external_id",
+            unique=True,
+            postgresql_where=text("external_id IS NOT NULL"),
+        ),
+    )
 
     session_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("conversation_sessions.id"), nullable=False, index=True
