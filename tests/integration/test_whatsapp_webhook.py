@@ -10,14 +10,23 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from fastapi.testclient import TestClient
+import pytest_asyncio
+from httpx import ASGITransport, AsyncClient
 
 from app.main import app
 
 
-@pytest.fixture
-def client() -> TestClient:
-    return TestClient(app)
+@pytest.fixture(scope="session", autouse=True)
+def _schema() -> None:
+    """Webhook HTTP tests do not require the database schema bootstrap."""
+    yield
+
+
+@pytest_asyncio.fixture
+async def client() -> AsyncClient:
+    transport = ASGITransport(app=app)  # type: ignore[arg-type]
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        yield client
 
 
 def _payload(
@@ -61,10 +70,10 @@ def _payload(
 # ---------------------------------------------------------------------------
 
 class TestWebhookVerification:
-    def test_valid_verify_token_returns_challenge(self, client: TestClient) -> None:
+    async def test_valid_verify_token_returns_challenge(self, client: AsyncClient) -> None:
         with patch("app.api.webhook.settings") as mock_settings:
             mock_settings.whatsapp_verify_token = "my-verify-token"
-            response = client.get(
+            response = await client.get(
                 "/whatsapp",
                 params={
                     "hub.mode": "subscribe",
@@ -75,10 +84,10 @@ class TestWebhookVerification:
         assert response.status_code == 200
         assert response.text == "1234567890"
 
-    def test_wrong_verify_token_returns_403(self, client: TestClient) -> None:
+    async def test_wrong_verify_token_returns_403(self, client: AsyncClient) -> None:
         with patch("app.api.webhook.settings") as mock_settings:
             mock_settings.whatsapp_verify_token = "correct-token"
-            response = client.get(
+            response = await client.get(
                 "/whatsapp",
                 params={
                     "hub.mode": "subscribe",
@@ -88,10 +97,10 @@ class TestWebhookVerification:
             )
         assert response.status_code == 403
 
-    def test_wrong_mode_returns_403(self, client: TestClient) -> None:
+    async def test_wrong_mode_returns_403(self, client: AsyncClient) -> None:
         with patch("app.api.webhook.settings") as mock_settings:
             mock_settings.whatsapp_verify_token = "token"
-            response = client.get(
+            response = await client.get(
                 "/whatsapp",
                 params={
                     "hub.mode": "unsubscribe",
@@ -107,33 +116,40 @@ class TestWebhookVerification:
 # ---------------------------------------------------------------------------
 
 class TestWebhookHTTP:
-    def test_valid_request_returns_200(self, client: TestClient) -> None:
-        with patch("app.api.webhook._handle_whatsapp_update", new_callable=AsyncMock):
-            response = client.post("/whatsapp", json=_payload())
+    async def test_valid_request_returns_200(self, client: AsyncClient) -> None:
+        with patch("app.api.webhook.settings.whatsapp_app_secret", ""):
+            with patch("app.api.webhook._handle_whatsapp_update", new_callable=AsyncMock):
+                response = await client.post("/whatsapp", json=_payload())
         assert response.status_code == 200
 
-    def test_response_body_is_ok(self, client: TestClient) -> None:
-        with patch("app.api.webhook._handle_whatsapp_update", new_callable=AsyncMock):
-            response = client.post("/whatsapp", json=_payload())
+    async def test_response_body_is_ok(self, client: AsyncClient) -> None:
+        with patch("app.api.webhook.settings.whatsapp_app_secret", ""):
+            with patch("app.api.webhook._handle_whatsapp_update", new_callable=AsyncMock):
+                response = await client.post("/whatsapp", json=_payload())
         assert response.json() == {"ok": "true"}
 
-    def test_handle_called_for_text(self, client: TestClient) -> None:
-        with patch("app.api.webhook._handle_whatsapp_update") as mock_handle:
-            client.post("/whatsapp", json=_payload(body="Necesito una factura"))
-            mock_handle.assert_called_once()
+    async def test_handle_called_for_text(self, client: AsyncClient) -> None:
+        with patch("app.api.webhook.settings.whatsapp_app_secret", ""):
+            with patch("app.api.webhook._handle_whatsapp_update") as mock_handle:
+                await client.post("/whatsapp", json=_payload(body="Necesito una factura"))
+                mock_handle.assert_called_once()
 
-    def test_handle_called_for_voice(self, client: TestClient) -> None:
-        with patch("app.api.webhook._handle_whatsapp_update") as mock_handle:
-            client.post("/whatsapp", json=_payload(msg_type="audio", media_id="some-media-id"))
-            mock_handle.assert_called_once()
+    async def test_handle_called_for_voice(self, client: AsyncClient) -> None:
+        with patch("app.api.webhook.settings.whatsapp_app_secret", ""):
+            with patch("app.api.webhook._handle_whatsapp_update") as mock_handle:
+                await client.post(
+                    "/whatsapp", json=_payload(msg_type="audio", media_id="some-media-id")
+                )
+                mock_handle.assert_called_once()
 
-    def test_webhook_parses_from_number(self, client: TestClient) -> None:
-        with patch("app.api.webhook._handle_whatsapp_update") as mock_handle:
-            client.post("/whatsapp", json=_payload(from_number="34611223344"))
-            webhook_arg = mock_handle.call_args[0][0]
-            assert webhook_arg.entry[0].changes[0].value.messages[0].from_ == "34611223344"
+    async def test_webhook_parses_from_number(self, client: AsyncClient) -> None:
+        with patch("app.api.webhook.settings.whatsapp_app_secret", ""):
+            with patch("app.api.webhook._handle_whatsapp_update") as mock_handle:
+                await client.post("/whatsapp", json=_payload(from_number="34611223344"))
+                webhook_arg = mock_handle.call_args[0][0]
+                assert webhook_arg.entry[0].changes[0].value.messages[0].from_ == "34611223344"
 
-    def test_status_update_accepted_silently(self, client: TestClient) -> None:
+    async def test_status_update_accepted_silently(self, client: AsyncClient) -> None:
         status_payload = {
             "object": "whatsapp_business_account",
             "entry": [{
@@ -150,8 +166,9 @@ class TestWebhookHTTP:
                 }],
             }],
         }
-        with patch("app.api.webhook._handle_whatsapp_update", new_callable=AsyncMock):
-            response = client.post("/whatsapp", json=status_payload)
+        with patch("app.api.webhook.settings.whatsapp_app_secret", ""):
+            with patch("app.api.webhook._handle_whatsapp_update", new_callable=AsyncMock):
+                response = await client.post("/whatsapp", json=status_payload)
         assert response.status_code == 200
 
 
@@ -160,18 +177,20 @@ class TestWebhookHTTP:
 # ---------------------------------------------------------------------------
 
 class TestSignatureValidation:
-    def test_missing_signature_returns_403_when_secret_set(self, client: TestClient) -> None:
+    async def test_missing_signature_returns_403_when_secret_set(
+        self, client: AsyncClient
+    ) -> None:
         with patch("app.api.webhook.settings") as mock_settings:
             mock_settings.whatsapp_app_secret = "my-app-secret"
-            response = client.post("/whatsapp", json=_payload())
+            response = await client.post("/whatsapp", json=_payload())
         assert response.status_code == 403
 
-    def test_wrong_signature_returns_403(self, client: TestClient) -> None:
+    async def test_wrong_signature_returns_403(self, client: AsyncClient) -> None:
 
         body = b'{"object":"test"}'
         with patch("app.api.webhook.settings") as mock_settings:
             mock_settings.whatsapp_app_secret = "my-app-secret"
-            response = client.post(
+            response = await client.post(
                 "/whatsapp",
                 content=body,
                 headers={
@@ -181,7 +200,7 @@ class TestSignatureValidation:
             )
         assert response.status_code == 403
 
-    def test_correct_signature_passes(self, client: TestClient) -> None:
+    async def test_correct_signature_passes(self, client: AsyncClient) -> None:
         import hashlib
         import hmac
         import json
@@ -194,7 +213,7 @@ class TestSignatureValidation:
             mock_settings.whatsapp_app_secret = secret
             mock_settings.whatsapp_verify_token = ""
             with patch("app.api.webhook._handle_whatsapp_update", new_callable=AsyncMock):
-                response = client.post(
+                response = await client.post(
                     "/whatsapp",
                     content=body,
                     headers={
