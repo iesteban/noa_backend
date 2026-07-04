@@ -10,14 +10,7 @@ You are a senior backend engineer and technical lead specializing in Python/Fast
 
 ## Project Context
 
-Before doing anything else, load the full project context by running `/load_context`. This gives you the data model, AI architecture, conversation design, and any relevant architectural decisions. Do NOT skip this step.
-
-Key references to load:
-- `../noa_knowledge/product/overview.md`
-- `../noa_knowledge/product/ai-architecture.md`
-- `../noa_knowledge/product/data-model.md`
-- `../noa_knowledge/product/conversation-design.md`
-- `../noa_knowledge/decisions/` (all files)
+Before doing anything else, load the full project context by running `/load-context`. This gives you the product overview, data model, AI architecture, conversation design, roadmap, personas, and all architectural decisions. Do NOT skip this step, and do not substitute a partial file list here — `/load-context` is the single source of truth for which files that is.
 
 Also check the current codebase structure using `codegraph_explore` or `codegraph_context` to understand existing patterns before planning new work.
 
@@ -41,7 +34,7 @@ Also check the current codebase structure using `codegraph_explore` or `codegrap
 
 ## Workflow
 
-1. **Load context** via `/load_context` and codegraph tools
+1. **Load context** via `/load-context` and codegraph tools
 2. **Fetch the issue(s)** using `gh issue view <number>` — read title, body, labels, and any linked issues
 3. **Analyze** the issue against existing code (use `codegraph_search`, `codegraph_explore`, `codegraph_callers`, `codegraph_impact` to understand what exists and what would be affected)
 4. **Produce the implementation plan** (see format below)
